@@ -117,9 +117,7 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
           controls_allowed = 1;
           break;
         default:
-          break; // any other button is irrelevant
-      }
-      switch(button2)
+          switch(button2)
           {
             case 1: //lkas_button
               controls_allowed = 1;
@@ -127,6 +125,8 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
             default:
               break;
           }
+          break; // any other button is irrelevant
+      }
     }
 
     // user brake signal on 0x17C reports applied brake from computer brake on accord
