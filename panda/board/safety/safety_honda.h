@@ -24,6 +24,7 @@ const int HONDA_BOSCH_NO_GAS_VALUE = -30000; // value sent when not requesting g
 const int HONDA_BOSCH_GAS_MAX = 2000;
 const int HONDA_BOSCH_ACCEL_MIN = -350; // max braking == -3.5m/s2
 
+
 // Nidec and Bosch giraffe have pt on bus 0
 AddrCheckStruct honda_rx_checks[] = {
   {.msg = {{0x1A6, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 40000U},
@@ -105,7 +106,7 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // 0x1A6 for the ILX, 0x296 for the Civic Touring
     if ((addr == 0x1A6) || (addr == 0x296)) {
       int button = (GET_BYTE(to_push, 0) & 0xE0) >> 5;
-      int button2 = (GET_BYTE(to_push, 0) & 0x0C) >> 2;
+      int button2 = (GET_BYTE(to_push, 5) & 0x0C) >> 2;
       switch (button) {
         case 1:  // main
           disengageFromBrakes = false;
@@ -116,7 +117,9 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
           controls_allowed = 1;
           break;
         default:
-          switch(button2)
+          break; // any other button is irrelevant
+      }
+      switch(button2)
           {
             case 1: //lkas_button
               controls_allowed = 1;
@@ -124,8 +127,6 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
             default:
               break;
           }
-          break; // any other button is irrelevant
-      }
     }
 
     // user brake signal on 0x17C reports applied brake from computer brake on accord
