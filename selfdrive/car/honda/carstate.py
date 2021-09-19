@@ -298,6 +298,7 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
     self.belowLaneChangeSpeed = ret.vEgo < (30 * CV.MPH_TO_MS)
+    self.steer_torque_limited = ret.vEgo < (6 * CV.MPH_TO_MS)
 
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE"]
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE_RATE"]
@@ -447,6 +448,7 @@ class CarState(CarStateBase):
     # User steering input above a certain threshold should cancel computer steering temporarily
     if self.CP.carFingerprint in (CAR.ACCORD_NIDEC, CAR.ACCORD_NIDEC_HYBRID, CAR.ACURA_MDX_HYBRID):
       self.steer_not_allowed = True if bool(abs(ret.steeringTorque) >= 60) else self.steer_not_allowed
+      self.steer_torque_limited = True if bool(abs(ret.steeringTorque) >= 60) else self.steer_torque_limited
 
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
     self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"] if self.CP.carFingerprint in (CAR.CIVIC) else False
