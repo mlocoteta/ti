@@ -316,7 +316,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   if(torque_interceptor_detected == 1 && controls_allowed) {
     if (addr == 0xE4 ) {
-      int desired_torque = (((GET_BYTE(to_send, 0)) << 8) | GET_BYTE(to_send, 1)) - HONDA_MAX_STEER;
+      int desired_torque = (((GET_BYTE(to_send, 0)) << 8) | GET_BYTE(to_send, 1)) - TI_MAX_STEER;
       bool violation = 0;
       uint32_t ts = microsecond_timer_get();
 
