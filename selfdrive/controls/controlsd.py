@@ -10,7 +10,7 @@ import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
+from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can, get_ti
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
@@ -92,6 +92,7 @@ class Controls:
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
+    self.ti_ready = False
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
 
     # read params
@@ -252,6 +253,22 @@ class Controls:
 
     if not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
+
+    if self.sm['pandaState'].torqueInterceptorDetected and not self.ti_ready:
+      self.ti_ready = True
+      print("TI is found")
+      self.CP.enableTorqueInterceptor = True
+     #Update CP based on torque_interceptor_ready
+      self.CP = get_ti()
+      #Update self.Lac with new CP for tuning
+     # if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      #  self.LaC = LatControlAngle(self.CP)
+      #elif self.CP.lateralTuning.which() == 'pid':
+      #  self.LaC = LatControlPID(self.CP)
+      #elif self.CP.lateralTuning.which() == 'indi':
+      #  self.LaC = LatControlINDI(self.CP)
+      #elif self.CP.lateralTuning.which() == 'lqr':
+      #  self.LaC = LatControlLQR(self.CP)
 
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)

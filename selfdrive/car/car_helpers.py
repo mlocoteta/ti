@@ -8,8 +8,10 @@ from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive import global_ti
+from cereal import car, log
 
-from cereal import car
+DynamicParam = log.PandaState
 EventName = car.CarEvent.EventName
 
 
@@ -170,8 +172,11 @@ def fingerprint(logcan, sendcan):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
+    cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
                  source=source, fuzzy=not exact_match, fw_count=len(car_fw))
+    global_ti.saved_candidate = car_fingerprint
+    global_ti.saved_finger = finger
+
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
@@ -183,6 +188,7 @@ def get_car(logcan, sendcan):
     candidate = "mock"
 
   CarInterface, CarController, CarState = interfaces[candidate]
+  global_ti.saved_CarInterface = CarInterface
   car_params = CarInterface.get_params(candidate, fingerprints, car_fw)
   car_params.carVin = vin
   car_params.carFw = car_fw
@@ -190,3 +196,10 @@ def get_car(logcan, sendcan):
   car_params.fuzzyFingerprint = not exact_match
 
   return CarInterface(car_params, CarController, CarState), car_params
+
+def get_ti():
+  print("get_ti, entering get_params")
+  CarInterface = global_ti.saved_CarInterface
+  car_params = CarInterface.get_params(global_ti.saved_candidate, global_ti.saved_finger)
+
+  return car_params
