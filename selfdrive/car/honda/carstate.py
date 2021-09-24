@@ -6,7 +6,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL, SERIAL_STEERING, LKAS_LIMITS
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL, SERIAL_STEERING, LKAS_LIMITS, TI_STATE
 
 TransmissionType = car.CarParams.TransmissionType
 
@@ -267,7 +267,7 @@ class CarState(CarStateBase):
 
     self.ti_ramp_down = False
     self.ti_version = 1
-    self.ti_state = 3
+    self.ti_state = TI_STATE.RUN
     self.ti_violation = 0
     self.ti_error = 0
 
@@ -380,7 +380,9 @@ class CarState(CarStateBase):
       self.ti_error = cp.vl["TI_FEEDBACK"]["ERROR"] # 0 = no error
       if self.ti_version > 1:
         self.ti_ramp_down = (cp.vl["TI_FEEDBACK"]["RAMP_DOWN"] == 1)
+
       ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.TI_STEER_THRESHOLD
+      ret.noSteerTI = (self.ti_ramp_down) or (self.ti_state != TI_STATE.RUN)
     else:
       ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.CP.carFingerprint]
 
