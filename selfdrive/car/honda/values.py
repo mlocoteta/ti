@@ -42,7 +42,12 @@ class CarControllerParams():
       self.TI_STEER_DRIVER_FACTOR = 1         # from dbc
       self.TI_STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
 
-
+class TI_STATE:
+  DISCOVER = 0
+  OFF = 1
+  DRIVER_OVER = 2
+  RUN = 3
+  
 class LKAS_LIMITS:
   STEER_THRESHOLD = 5
   TI_STEER_THRESHOLD = 5
