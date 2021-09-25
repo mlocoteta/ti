@@ -382,7 +382,7 @@ class CarState(CarStateBase):
         self.ti_ramp_down = (cp.vl["TI_FEEDBACK"]["RAMP_DOWN"] == 1)
 
       ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.TI_STEER_THRESHOLD
-      ret.noSteerTI = (self.ti_ramp_down) or (self.ti_state != TI_STATE.RUN)
+      ret.gasPressed = (self.ti_ramp_down) or (self.ti_state != TI_STATE.RUN)
     else:
       ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.CP.carFingerprint]
 
