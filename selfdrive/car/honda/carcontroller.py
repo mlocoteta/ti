@@ -135,7 +135,7 @@ class CarController():
     # **** process the car messages ****
 
     if CS.CP.enableTorqueInterceptor:
-      new_steer = int(round(actuators.steer * CarControllerParams.TI_STEER_MAX))
+      new_steer = int(round(actuators.steer * P.TI_STEER_MAX))
       apply_steer = apply_ti_steer_torque_limits(new_steer, self.apply_steer_last,
                                                   CS.out.steeringTorque, CarControllerParams)
       if CS.out.gasPressed:
