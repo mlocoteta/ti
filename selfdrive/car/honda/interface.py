@@ -195,21 +195,21 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.66 # 13.37 is spec
-      if ret.enableTorqueInterceptor:
-        ret.lateralTuning.init('indi')
-        ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
-        ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.0]
-        ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
-        ret.lateralTuning.indi.outerLoopGainV = [3.0, 6]
-        ret.lateralTuning.indi.timeConstantBP = [2, 35]
-        ret.lateralTuning.indi.timeConstantV = [0.2, 1.5]
-        ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
-        ret.lateralTuning.indi.actuatorEffectivenessV = [2.0, 1]
-      else:
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
-        ret.lateralTuning.pid.kf = 0.000025
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
+      ret.lateralTuning.pid.kf = 0.000025
       tire_stiffness_factor = 0.8467
+      
+      ret.lateralTuning.init('indi')
+      ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
+      ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.0]
+      ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
+      ret.lateralTuning.indi.outerLoopGainV = [3.0, 6]
+      ret.lateralTuning.indi.timeConstantBP = [2, 35]
+      ret.lateralTuning.indi.timeConstantV = [0.2, 1.5]
+      ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
+      ret.lateralTuning.indi.actuatorEffectivenessV = [2.0, 1]
+      
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5] 
       ret.longitudinalTuning.kiBP = [0., 35.]
