@@ -14,7 +14,7 @@
 // 250ms between real time checks
 #define TI_RT_INTERVAL 250000
 #define TI_MAX_RATE_UP 10
-#define TI_MAX_RATE_DOWN 25
+#define TI_MAX_RATE_DOWN 15
 #define TI_DRIVER_TORQUE_ALLOWANCE 15
 #define TI_DRIVER_TORQUE_FACTOR 1
 #define TI_MAX_TORQUE_ERROR 350

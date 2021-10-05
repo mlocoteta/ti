@@ -35,7 +35,7 @@ class CarControllerParams():
       self.BOSCH_GAS_LOOKUP_V = [0, 2000]
 
       self.TI_STEER_MAX = 600                # theoretical max_steer 2047
-      self.TI_STEER_DELTA_UP = 6             # torque increase per refresh
+      self.TI_STEER_DELTA_UP = 5             # torque increase per refresh
       self.TI_STEER_DELTA_DOWN = 15           # torque decrease per refresh
       self.TI_STEER_DRIVER_ALLOWANCE = 5    # allowed driver torque before start limiting
       self.TI_STEER_DRIVER_MULTIPLIER = 40     # weight driver torque
