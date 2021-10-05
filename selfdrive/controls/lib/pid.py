@@ -15,10 +15,10 @@ def apply_deadzone(error, deadzone):
   return error
 
 class LatPIDController():
-  def __init__(self, k_p, k_i, k_d, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
+  def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
-    self._k_d = k_d  # derivative gain
+#    self._k_d = k_d  # derivative gain
     self.k_f = k_f  # feedforward gain
     self.op_params = opParams()
 
@@ -43,9 +43,9 @@ class LatPIDController():
     return self.op_params.get('lat_i')
     # return interp(self.speed, self._k_i[0], self._k_i[1])
 
-  @property
-  def k_d(self):
-    return self.op_params.get('lat_d')
+#  @property
+#  def k_d(self):
+#    return self.op_params.get('lat_d')
     # return interp(self.speed, self._k_d[0], self._k_d[1])
 
   def _check_saturation(self, control, check_saturation, error):
@@ -76,8 +76,8 @@ class LatPIDController():
     error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
-    print("update kf ", self.k_f)
-    print("update feedforward ", feedforward)
+#    print("update kf ", self.k_f)
+#    print("update feedforward ", feedforward)
     d = 0
     if len(self.errors) >= 5:  # makes sure list is long enough
       d = (error - self.errors[-5]) / 5  # get deriv in terms of 100hz (tune scale doesn't change)
@@ -118,11 +118,11 @@ class LatPIDController():
 
 
 class LongPIDController:
-  def __init__(self, k_p, k_i, k_d, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
+  def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
     self.op_params = opParams()
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
-    self._k_d = k_d  # derivative gain
+    #self._k_d = k_d  # derivative gain
     self.k_f = k_f  # feedforward gain
 
     self.max_accel_d = 0.4 * CV.MPH_TO_MS
@@ -146,9 +146,9 @@ class LongPIDController:
   def k_i(self):
     return interp(self.speed, self._k_i[0], self._k_i[1])
 
-  @property
-  def k_d(self):
-    return interp(self.speed, self._k_d[0], self._k_d[1])
+#  @property
+#  def k_d(self):
+#    return interp(self.speed, self._k_d[0], self._k_d[1])
 
   def _check_saturation(self, control, check_saturation, error):
     saturated = (control < self.neg_limit) or (control > self.pos_limit)
@@ -174,13 +174,13 @@ class LongPIDController:
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
-    print("update kf before ", self.k_f)
+#    print("update kf before ", self.k_f)
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.k_f = self.op_params.get('lat_f')/100000
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
-    print("update kf after ", self.k_f)
+#    print("update kf after ", self.k_f)
     if override:
       self.id -= self.i_unwind_rate * float(np.sign(self.id))
     else:
