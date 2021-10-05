@@ -123,7 +123,7 @@ class opParams:
                         #'log_auto_df': Param(False, bool, 'Logs dynamic follow data for auto-df', static=True),
                         'lat_p': Param(0.38, NUMBER, '', live=True),
                         'lat_i': Param(0.1, NUMBER, '', live=True),
-                        #'lat_d': Param(0.0, NUMBER, '', live=True),
+                        'lat_d': Param(0.0, NUMBER, '', live=True),
                         'lat_f': Param(2.5, NUMBER, '', live=True),
                         'lat_rc': Param(0., NUMBER, 'Time constant for smoothing', live=True)}
                         # 'dynamic_camera_offset': Param(False, bool, 'Whether to automatically keep away from oncoming traffic.\n'
