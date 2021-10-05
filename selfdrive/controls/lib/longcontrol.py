@@ -1,8 +1,10 @@
 from cereal import log
 from common.numpy_fast import clip, interp
-from selfdrive.controls.lib.pid import LongPIDController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
+from selfdrive.controls.lib.pid import LongPIDController
+from selfdrive.controls.lib.dynamic_gas import DynamicGas
+from common.op_params import opParams
 
 LongCtrlState = log.ControlsState.LongControlState
 
@@ -56,27 +58,35 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 class LongControl():
   def __init__(self, CP, compute_gb):
     self.long_control_state = LongCtrlState.off  # initialized to off
+    # kdBP = [0., 16., 35.]
+    # kdV = [0.08, 1.215, 2.51]
+
     self.pid = LongPIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
-                            (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
-                            rate=RATE,
-                            sat_limit=0.8,
-                            convert=compute_gb)
+                                 (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
+                                 ([0], [0]),
+                                 rate=RATE,
+                                 sat_limit=0.8,
+                                 convert=compute_gb)
     self.v_pid = 0.0
     self.last_output_gb = 0.0
+
+    # self.op_params = opParams()
+    # self.dynamic_gas = DynamicGas(CP, candidate)
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, CS, CP, long_plan):
+  def update(self, active, CS, CP, long_plan, extras):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
-    # TODO estimate car specific lag, use .15s for now
+    # TODO estimate car specific lag, use .5s for now
     if len(long_plan.speeds) == CONTROL_N:
-      v_target = interp(DEFAULT_LONG_LAG, T_IDXS[:CONTROL_N], long_plan.speeds)
+      accel_delay = interp(CS.vEgo, [4.4704, 35.7632], [0.15, 0.3])  # 10 to 80 mph
+      v_target = interp(accel_delay, T_IDXS[:CONTROL_N], long_plan.speeds)
       v_target_future = long_plan.speeds[-1]
-      a_target = interp(DEFAULT_LONG_LAG, T_IDXS[:CONTROL_N], long_plan.accels)
+      a_target = interp(accel_delay, T_IDXS[:CONTROL_N], long_plan.accels)
     else:
       v_target = 0.0
       v_target_future = 0.0
@@ -86,6 +96,9 @@ class LongControl():
     # Actuation limits
     gas_max = interp(CS.vEgo, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(CS.vEgo, CP.brakeMaxBP, CP.brakeMaxV)
+
+    # if self.op_params.get('dynamic_gas'):
+    #   gas_max = self.dynamic_gas.update(CS, extras)
 
     # Update state machine
     output_gb = self.last_output_gb
@@ -104,9 +117,6 @@ class LongControl():
       self.v_pid = v_target
       self.pid.pos_limit = gas_max
       self.pid.neg_limit = - brake_max
-
-      if long_plan.longitudinalPlanSource == 'cruise':
-        self.pid.neg_limit = 0
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
