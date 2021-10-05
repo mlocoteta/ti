@@ -125,7 +125,7 @@ class opParams:
                         'lat_i': Param(0.1, NUMBER, '', live=True),
                         'lat_d': Param(0.0, NUMBER, '', live=True),
                         'lat_f': Param(2.5, NUMBER, '', live=True),
-                        'lat_rc': Param(0., NUMBER, 'Time constant for smoothing', live=True),
+                        'lat_rc': Param(0., NUMBER, 'Time constant for smoothing', live=True)}
                         # 'dynamic_camera_offset': Param(False, bool, 'Whether to automatically keep away from oncoming traffic.\n'
                         #                                             'Works from 35 to ~60 mph (requires radar)'),
                         # 'dynamic_camera_offset_time': Param(3.5, NUMBER, 'How long to keep away from oncoming traffic in seconds after losing lead'),
@@ -139,6 +139,7 @@ class opParams:
                         #'corollaTSS2_use_indi': Param(False, bool, 'Enable this to use INDI for lat with your TSS2 Corolla', static=True),
                         #'rav4TSS2_use_indi': Param(False, bool, 'Enable this to use INDI for lat with your TSS2 RAV4', static=True),
                         #'standstill_hack': Param(False, bool, 'Some cars support stop and go, you just need to enable this', static=True)}
+                        
 
     self._to_delete = ['long_accel_delay', 'accel_lag_compensation']  # a list of unused params you want to delete from users' params file
     self._to_reset = []  # a list of params you want reset to their default values
