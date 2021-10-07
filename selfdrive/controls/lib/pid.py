@@ -78,16 +78,16 @@ class LatPIDController():
     self.f = feedforward * self.k_f
 #    print("update kf ", self.k_f)
 #    print("update feedforward ", feedforward)
-    d = 0
-    if len(self.errors) >= 5:  # makes sure list is long enough
-      d = (error - self.errors[-5]) / 5  # get deriv in terms of 100hz (tune scale doesn't change)
-      d *= self.k_d
+#    d = 0
+#    if len(self.errors) >= 5:  # makes sure list is long enough
+#      d = (error - self.errors[-5]) / 5  # get deriv in terms of 100hz (tune scale doesn't change)
+#      d *= self.k_d
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
       i = self.i + error * self.k_i * self.i_rate
-      control = self.p + self.f + i + d
+      control = self.p + self.f + i #+ d
 
       if self.convert is not None:
         control = self.convert(control, speed=self.speed)
@@ -99,7 +99,7 @@ class LatPIDController():
          not freeze_integrator:
         self.i = i
 
-    control = self.p + self.f + self.i + d
+    control = self.p + self.f + self.i #+ d
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
 ###
