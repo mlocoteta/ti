@@ -197,12 +197,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.66 # 13.37 is spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
-      ret.lateralTuning.pid.kf = 0.000025
+      ret.lateralTuning.pid.kf = 0.000006
       tire_stiffness_factor = 0.8467
 #      if ret.enableTorqueInterceptor:
-#        ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+#      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1], [0.025]]
 #        ret.lateralTuning.init('indi')
-#        ret.steerActuatorDelay = 0.1
+      ret.steerActuatorDelay = 0.1
 #        ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
 #        ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.0]
 #        ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
@@ -461,7 +463,7 @@ class CarInterface(CarInterfaceBase):
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.5
+    ret.steerRateCost = .5
     ret.steerLimitTimer = 0.8
 
     return ret
