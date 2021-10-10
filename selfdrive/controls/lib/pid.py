@@ -121,7 +121,7 @@ class LongPIDController:
     self.op_params = opParams()
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
-    self._k_d = k_d  # derivative gain
+ #   self._k_d = k_d  # derivative gain
     self.k_f = k_f  # feedforward gain
 
     self.max_accel_d = 0.4 * CV.MPH_TO_MS
