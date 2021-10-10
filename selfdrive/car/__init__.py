@@ -45,7 +45,6 @@ def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None):
 
 #alternate settings when using torque interceptor. May or may not be useful to some users/branches.
 def apply_ti_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
-
   # limits due to driver torque
   driver_max_torque = LIMITS.TI_STEER_MAX + (LIMITS.TI_STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.TI_STEER_DRIVER_FACTOR) * LIMITS.TI_STEER_DRIVER_MULTIPLIER
   driver_min_torque = -LIMITS.TI_STEER_MAX + (-LIMITS.TI_STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.TI_STEER_DRIVER_FACTOR) * LIMITS.TI_STEER_DRIVER_MULTIPLIER
@@ -55,10 +54,18 @@ def apply_ti_steer_torque_limits(apply_torque, apply_torque_last, driver_torque,
 
   # slow rate if steer torque increases in magnitude
   if apply_torque_last > 0:
-    apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN, -LIMITS.TI_STEER_DELTA_UP),
-                        apply_torque_last + LIMITS.TI_STEER_DELTA_UP)
+    if apply_torque > 200:
+      apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN_LOW, -LIMITS.TI_STEER_DELTA_UP_LOW),
+                          apply_torque_last + LIMITS.TI_STEER_DELTA_UP_LOW)
+    else: 
+      apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN, -LIMITS.TI_STEER_DELTA_UP),
+                          apply_torque_last + LIMITS.TI_STEER_DELTA_UP)
   else:
-    apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP,
+    if apply_torque < 200:
+      apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP_LOW,
+                        min(apply_torque_last + LIMITS.TI_STEER_DELTA_DOWN_LOW, LIMITS.TI_STEER_DELTA_UP_LOW))
+    else:
+      apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP,
                         min(apply_torque_last + LIMITS.TI_STEER_DELTA_DOWN, LIMITS.TI_STEER_DELTA_UP))
 
   return int(round(float(apply_torque)))
