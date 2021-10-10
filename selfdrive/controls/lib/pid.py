@@ -15,10 +15,10 @@ def apply_deadzone(error, deadzone):
   return error
 
 class LatPIDController():
-  def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
+  def __init__(self, k_p, k_i, k_d, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
-#    self._k_d = k_d  # derivative gain
+    self._k_d = k_d  # derivative gain
     self.k_f = k_f  # feedforward gain
     self.op_params = opParams()
 
@@ -44,8 +44,8 @@ class LatPIDController():
     # return interp(self.speed, self._k_i[0], self._k_i[1])
 
 #  @property
-#  def k_d(self):
-#    return self.op_params.get('lat_d')
+  def k_d(self):
+    return self.op_params.get('lat_d')
     # return interp(self.speed, self._k_d[0], self._k_d[1])
 
   def _check_saturation(self, control, check_saturation, error):
@@ -78,16 +78,16 @@ class LatPIDController():
     self.f = feedforward * self.k_f
 #    print("update kf ", self.k_f)
 #    print("update feedforward ", feedforward)
-#    d = 0
-#    if len(self.errors) >= 5:  # makes sure list is long enough
-#      d = (error - self.errors[-5]) / 5  # get deriv in terms of 100hz (tune scale doesn't change)
-#      d *= self.k_d
+    d = 0
+    if len(self.errors) >= 5:  # makes sure list is long enough
+      d = (error - self.errors[-5]) / 5  # get deriv in terms of 100hz (tune scale doesn't change)
+      d *= self.k_d
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
       i = self.i + error * self.k_i * self.i_rate
-      control = self.p + self.f + i #+ d
+      control = self.p + self.f + i + d
 
       if self.convert is not None:
         control = self.convert(control, speed=self.speed)
@@ -99,7 +99,7 @@ class LatPIDController():
          not freeze_integrator:
         self.i = i
 
-    control = self.p + self.f + self.i #+ d
+    control = self.p + self.f + self.i + d
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
 ###
@@ -122,7 +122,7 @@ class LongPIDController:
     self.op_params = opParams()
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
-    #self._k_d = k_d  # derivative gain
+    self._k_d = k_d  # derivative gain
     self.k_f = k_f  # feedforward gain
 
     self.max_accel_d = 0.4 * CV.MPH_TO_MS
