@@ -43,7 +43,7 @@ class LatPIDController():
     return self.op_params.get('lat_i')
     # return interp(self.speed, self._k_i[0], self._k_i[1])
 
-#  @property
+  @property
   def k_d(self):
     return self.op_params.get('lat_d')
     # return interp(self.speed, self._k_d[0], self._k_d[1])
@@ -76,8 +76,7 @@ class LatPIDController():
     error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
-#    print("update kf ", self.k_f)
-#    print("update feedforward ", feedforward)
+
     d = 0
     if len(self.errors) >= 5:  # makes sure list is long enough
       d = (error - self.errors[-5]) / 5  # get deriv in terms of 100hz (tune scale doesn't change)
@@ -99,14 +98,14 @@ class LatPIDController():
          not freeze_integrator:
         self.i = i
 
-    control = self.p + self.f + self.i + d
+    control = self.p + self.i + d
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
-###
+
     alpha = 1. - DT_CTRL / (self.op_params.get('lat_rc') + DT_CTRL)
     self.delayed_output = self.delayed_output * alpha + control * (1. - alpha)
     control = float(self.delayed_output) + self.f
-###
+
     self.saturated = self._check_saturation(control, check_saturation, error)
 
     self.errors.append(float(error))
