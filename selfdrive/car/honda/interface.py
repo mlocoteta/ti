@@ -202,7 +202,6 @@ class CarInterface(CarInterfaceBase):
 #      if ret.enableTorqueInterceptor:
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 #      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1], [0.02]]
 #        ret.lateralTuning.init('indi')
       ret.steerActuatorDelay = 0.1
 #        ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
