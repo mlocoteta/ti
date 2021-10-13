@@ -124,7 +124,7 @@ class opParams:
                         'lat_p': Param(0.2, NUMBER, 'Actual proportional gain. Start from your car\'s tune in interface.py', live=True),
                         'lat_i': Param(0.05, NUMBER, 'Actual integral gain. Start from your car\'s tune in interface.py', live=True),
                         'lat_d': Param(0.0, NUMBER, 'Actual derivative gain. Does not exist in stock openpilot', live=True),
-                        'lat_f_multiplier': Param(1., NUMBER, 'Multiplier for your existing feedforward gain. 1 is default', live=True),
+                        'lat_f_multiplier': Param(1., NUMBER, 'Multiplier for your existing feedforward gain. 1 is default', live=True)}
                         # 'dynamic_camera_offset': Param(False, bool, 'Whether to automatically keep away from oncoming traffic.\n'
                         #                                             'Works from 35 to ~60 mph (requires radar)'),
                         # 'dynamic_camera_offset_time': Param(3.5, NUMBER, 'How long to keep away from oncoming traffic in seconds after losing lead'),
