@@ -460,8 +460,8 @@ struct CarParams {
     kpV @1 :List(Float32);
     kiBP @2 :List(Float32);
     kiV @3 :List(Float32);
-    kdBP @4 :List(Float32) = [0.];
-    kdV @5 :List(Float32) = [0.];
+    kdBP @4 :List(Float32);
+    kdV @5 :List(Float32);
     kf @6 :Float32;
     newKfTuned @7 :Bool;
   }
