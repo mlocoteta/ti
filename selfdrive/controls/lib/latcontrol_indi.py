@@ -130,7 +130,7 @@ class LatControlINDI():
 
       # Enforce rate limit
       if self.enforce_rate_limit:
-        steer_max = float(CarControllerParams.STEER_MAX)
+        steer_max = float(self.params.TI_STEER_MAX)
         new_output_steer_cmd = steer_max * (self.steer_filter.x + delta_u)
         prev_output_steer_cmd = steer_max * self.output_steer
         new_output_steer_cmd = apply_ti_steer_torque_limits(new_output_steer_cmd, prev_output_steer_cmd, prev_output_steer_cmd, self.params)
