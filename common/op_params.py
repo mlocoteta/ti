@@ -121,11 +121,16 @@ class opParams:
                         #'df_button_alerts': Param('audible', str, 'Can be: (\'off\', \'silent\', \'audible\')\n'
                         #                                          'How you want to be alerted when you change your dynamic following profile.'),
                         #'log_auto_df': Param(False, bool, 'Logs dynamic follow data for auto-df', static=True),
-                        'lat_p': Param(0.2, NUMBER, 'Actual proportional gain. Start from your car\'s tune in interface.py', live=True),
-                        'lat_i': Param(0.05, NUMBER, 'Actual integral gain. Start from your car\'s tune in interface.py', live=True),
-                        'lat_d': Param(0.0, NUMBER, 'Actual derivative gain. Does not exist in stock openpilot', live=True),
-                        'lat_f_multiplier': Param(1., NUMBER, 'Multiplier for your existing feedforward gain. 1 is default', live=True),
-                        'lat_rc': Param(0.1, NUMBER, 'Time constant for smoothing', live=True)}
+                        #'lat_p': Param(0.2, NUMBER, 'Actual proportional gain. Start from your car\'s tune in interface.py', live=True),
+                        #'lat_i': Param(0.05, NUMBER, 'Actual integral gain. Start from your car\'s tune in interface.py', live=True),
+                        #'lat_d': Param(0.0, NUMBER, 'Actual derivative gain. Does not exist in stock openpilot', live=True),
+                        #'lat_f_multiplier': Param(1., NUMBER, 'Multiplier for your existing feedforward gain. 1 is default', live=True),
+                        #'lat_rc': Param(0.1, NUMBER, 'Time constant for smoothing', live=True)}
+                        'indi_inner_loop': Param(4.0, NUMBER, 'Somewhat affects response to rate', live=True),
+                        'indi_outer_loop': Param(3.0, NUMBER, 'Not sure', live=True),
+                        'indi_time_constant': Param(1.0, NUMBER, 'In seconds, takes the exponential moving average of the output (smooths it)', live=True),
+                        'indi_actuator_effectiveness': Param(1.0, NUMBER, 'Higher values means less response, lower more response\n'
+                                                                          'The inverse of this is multiplied against accel_error and added onto the current output to be smoothed', live=True),
                         # 'dynamic_camera_offset': Param(False, bool, 'Whether to automatically keep away from oncoming traffic.\n'
                         #                                             'Works from 35 to ~60 mph (requires radar)'),
                         # 'dynamic_camera_offset_time': Param(3.5, NUMBER, 'How long to keep away from oncoming traffic in seconds after losing lead'),

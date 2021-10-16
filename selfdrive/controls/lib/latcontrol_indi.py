@@ -5,8 +5,9 @@ from cereal import log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from selfdrive.car import apply_toyota_steer_torque_limits
-from selfdrive.car.toyota.values import CarControllerParams
+from selfdrive.car import apply_toyota_steer_torque_limits, apply_ti_steer_torque_limits
+from common.op_params import opParams
+from selfdrive.car.honda.values import CarControllerParams
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 
@@ -45,23 +46,30 @@ class LatControlINDI():
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
     self.steer_filter = FirstOrderFilter(0., self.RC, DT_CTRL)
+    self.op_params = opParams()
+    self.params = CarControllerParams(CP)
+
 
     self.reset()
 
   @property
   def RC(self):
+    return self.op_params.get('indi_time_constant')
     return interp(self.speed, self._RC[0], self._RC[1])
 
   @property
   def G(self):
+    return self.op_params.get('indi_actuator_effectiveness')
     return interp(self.speed, self._G[0], self._G[1])
 
   @property
   def outer_loop_gain(self):
+    return self.op_params.get('indi_outer_loop')
     return interp(self.speed, self._outer_loop_gain[0], self._outer_loop_gain[1])
 
   @property
   def inner_loop_gain(self):
+    return self.op_params.get('indi_inner_loop')
     return interp(self.speed, self._inner_loop_gain[0], self._inner_loop_gain[1])
 
   def reset(self):
@@ -125,7 +133,7 @@ class LatControlINDI():
         steer_max = float(CarControllerParams.STEER_MAX)
         new_output_steer_cmd = steer_max * (self.steer_filter.x + delta_u)
         prev_output_steer_cmd = steer_max * self.output_steer
-        new_output_steer_cmd = apply_toyota_steer_torque_limits(new_output_steer_cmd, prev_output_steer_cmd, prev_output_steer_cmd, CarControllerParams)
+        new_output_steer_cmd = apply_ti_steer_torque_limits(new_output_steer_cmd, prev_output_steer_cmd, prev_output_steer_cmd, self.params)
         self.output_steer = new_output_steer_cmd / steer_max
       else:
         self.output_steer = self.steer_filter.x + delta_u
