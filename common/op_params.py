@@ -130,7 +130,7 @@ class opParams:
                         'indi_outer_loop': Param(3.0, NUMBER, 'Not sure', live=True),
                         'indi_time_constant': Param(1.0, NUMBER, 'In seconds, takes the exponential moving average of the output (smooths it)', live=True),
                         'indi_actuator_effectiveness': Param(1.0, NUMBER, 'Higher values means less response, lower more response\n'
-                                                                          'The inverse of this is multiplied against accel_error and added onto the current output to be smoothed', live=True),
+                                                                          'The inverse of this is multiplied against accel_error and added onto the current output to be smoothed', live=True)}
                         # 'dynamic_camera_offset': Param(False, bool, 'Whether to automatically keep away from oncoming traffic.\n'
                         #                                             'Works from 35 to ~60 mph (requires radar)'),
                         # 'dynamic_camera_offset_time': Param(3.5, NUMBER, 'How long to keep away from oncoming traffic in seconds after losing lead'),
