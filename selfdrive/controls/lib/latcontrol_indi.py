@@ -54,22 +54,22 @@ class LatControlINDI():
 
   @property
   def RC(self):
-    return self.op_params.get('indi_time_constant')
+    #return self.op_params.get('indi_time_constant')
     return interp(self.speed, self._RC[0], self._RC[1])
 
   @property
   def G(self):
-    return self.op_params.get('indi_actuator_effectiveness')
+    #return self.op_params.get('indi_actuator_effectiveness')
     return interp(self.speed, self._G[0], self._G[1])
 
   @property
   def outer_loop_gain(self):
-    return self.op_params.get('indi_outer_loop')
+    #return self.op_params.get('indi_outer_loop')
     return interp(self.speed, self._outer_loop_gain[0], self._outer_loop_gain[1])
 
   @property
   def inner_loop_gain(self):
-    return self.op_params.get('indi_inner_loop')
+    #return self.op_params.get('indi_inner_loop')
     return interp(self.speed, self._inner_loop_gain[0], self._inner_loop_gain[1])
 
   def reset(self):
