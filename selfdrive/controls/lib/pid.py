@@ -1,6 +1,8 @@
 import numpy as np
 from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
+from common.op_params import opParams
+
 
 def apply_deadzone(error, deadzone):
   if error > deadzone:
@@ -164,7 +166,7 @@ class PIDController:
     self.saturated = False
     self.control = 0
     self.errors = []
-    #self.delayed_output = 0.
+    self.delayed_output = 0.
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
@@ -192,9 +194,9 @@ class PIDController:
         self.i = i
     control = self.p + self.i + d
 
-    #alpha = 1. - DT_CTRL / (self.op_params.get('lat_rc') + DT_CTRL)
-    #self.delayed_output = self.delayed_output * alpha + control * (1. - alpha)
-    #control = float(self.delayed_output) + self.f
+    alpha = 1. - DT_CTRL / (self.op_params.get('lat_rc') + DT_CTRL)
+    self.delayed_output = self.delayed_output * alpha + control * (1. - alpha)
+    control = float(self.delayed_output) + self.f
 
     self.saturated = self._check_saturation(control, check_saturation, error)
 
