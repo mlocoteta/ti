@@ -10,6 +10,7 @@ from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
 from cereal import log
+from common.op_params import opParams, ENABLE_STEER_RATE_COST, STEER_RATE_COST, ENABLE_PLANNER_PARAMS
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
@@ -42,12 +43,18 @@ DESIRES = {
 
 
 class LateralPlanner():
-  def __init__(self, CP, use_lanelines=True, wide_camera=False):
+  def __init__(self, CP, use_lanelines=True, wide_camera=False, OP=None):
     self.use_lanelines = use_lanelines
-    self.LP = LanePlanner(wide_camera)
+    if not OP:
+      OP = opParams()
+    self.op_params = OP
+    self.LP = LanePlanner(wide_camera,OP=self.op_params)
 
     self.last_cloudlog_t = 0
     self.steer_rate_cost = CP.steerRateCost
+
+    self.update_params(CP)
+    self.last_steer_rate_cost = self.steer_rate_cost
 
     self.setup_mpc()
     self.solution_invalid_cnt = 0
@@ -64,6 +71,9 @@ class LateralPlanner():
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
+
+  def update_params(self, CP):
+    self.steer_rate_cost = CP.steerRateCost if not self.op_params.get(ENABLE_PLANNER_PARAMS) and not self.op_params.get(ENABLE_STEER_RATE_COST) else self.op_params.get(STEER_RATE_COST)
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -82,6 +92,7 @@ class LateralPlanner():
     self.safe_desired_curvature_rate = 0.0
 
   def update(self, sm, CP):
+    self.update_params(CP)
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
     measured_curvature = sm['controlsState'].curvature
@@ -176,13 +187,13 @@ class LateralPlanner():
       self.LP.rll_prob *= self.lane_change_ll_prob
     if self.use_lanelines:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.libmpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
+      self.libmpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, self.steer_rate_cost)
     else:
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0,1]/self.path_xyz_stds[0,1]), 0.5, 5.0) * MPC_COST_LAT.PATH
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
-      self.libmpc.set_weights(path_cost, heading_cost, CP.steerRateCost)
+      self.libmpc.set_weights(path_cost, heading_cost, self.steer_rate_cost)
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
     self.y_pts = y_pts
@@ -209,6 +220,7 @@ class LateralPlanner():
     if mpc_nans:
       self.libmpc.init()
       self.cur_state.curvature = measured_curvature
+      self.last_steer_rate_cost = self.steer_rate_cost
 
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
