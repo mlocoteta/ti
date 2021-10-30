@@ -248,7 +248,7 @@ class opParams:
 #                        LQR_K: Param([-110.73572306, 451.22718255], [list, float, int], live=True, depends_on=SHOW_LQR_PARAMS),
 #                        LQR_L: Param([0.3233671, 0.3185757], [list, float, int], live=True, depends_on=SHOW_LQR_PARAMS),
 #                        LQR_DC_GAIN: Param(0.002237852961363602, VT.number, live=True, depends_on=SHOW_LQR_PARAMS),
-#                        STEER_LIMIT_TIMER: Param(0.4, VT.number, live=True, depends_on=ENABLE_LAT_PARAMS),
+                        STEER_LIMIT_TIMER: Param(0.4, VT.number, live=True, depends_on=ENABLE_LAT_PARAMS),
                         SHOW_LAT_PID_PARAMS: Param(False, [bool], live=True, depends_on=ENABLE_LAT_PARAMS),
                         LAT_PID_KP_BP: Param([0., 5., 35.], [list, float, int], live=True, depends_on=SHOW_LAT_PID_PARAMS),
                         LAT_PID_KP_V: Param([3.6, 2.4, 1.5], [list, float, int], live=True, depends_on=SHOW_LAT_PID_PARAMS),
@@ -434,7 +434,7 @@ class opParams:
         print("Unable to write file: " + str(e))
         return False
 
-CAM_OFFSET = 'camera_offset'
+#CAM_OFFSET = 'camera_offset'
 
 ENABLE_UNSAFE_STEERING_RATE = "enable_unsafe_steering_rate"
 ENABLE_UNSAFE_STEERING_RATE_SELFDRIVE = "enable_unsafe_steering_rate_selfdrive"
@@ -504,7 +504,7 @@ WHICH_LAT_CTRL = 'which_lat_controller'
 #LQR_K = 'lqr_k'
 #LQR_L = 'lqr_l'
 #LQR_DC_GAIN = 'lqr_dc_gain'
-#STEER_LIMIT_TIMER = 'steer_limit_timer'
+STEER_LIMIT_TIMER = 'steer_limit_timer'
 
 SHOW_ACTUATOR_DELAY_PARAMS = "show_actuator_delay_params"
 STEER_ACTUATOR_DELAY = 'steer_actuator_delay'
