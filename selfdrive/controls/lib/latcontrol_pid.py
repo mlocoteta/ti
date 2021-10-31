@@ -1,10 +1,6 @@
 import math
 
-<<<<<<< HEAD
-from selfdrive.controls.lib.pid import PIDController
-=======
 from selfdrive.controls.lib.pid import LatPIDController
->>>>>>> bfa01b00... Add PID Tuning and OP_EDIT.py
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from cereal import log
 from common.op_params import opParams
@@ -12,19 +8,12 @@ from common.op_params import opParams
 
 class LatControlPID():
   def __init__(self, CP):
-<<<<<<< HEAD
-    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
-                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                             (CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
-                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, sat_limit=CP.steerLimitTimer, derivative_period=0.1)
-=======
     self.pid = LatPIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                                 (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                                 (CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
                                 k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, sat_limit=CP.steerLimitTimer, derivative_period=0.1)
     self.new_kf_tuned = CP.lateralTuning.pid.newKfTuned
     self.op_params = opParams()
->>>>>>> bfa01b00... Add PID Tuning and OP_EDIT.py
 
   def reset(self):
     self.pid.reset()
