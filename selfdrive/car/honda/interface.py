@@ -149,17 +149,18 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
       ret.lateralTuning.pid.kf = 0.000025
       tire_stiffness_factor = 0.8467
-      
-      ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
-      ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.0]
-      ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
-      ret.lateralTuning.indi.outerLoopGainV = [3.0, 6]
-      ret.lateralTuning.indi.timeConstantBP = [2, 35]
-      ret.lateralTuning.indi.timeConstantV = [0.2, 1.5]
-      ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
-      ret.lateralTuning.indi.actuatorEffectivenessV = [2.0, 1]
-
+#      if ret.enableTorqueInterceptor:
+#        ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+#        ret.lateralTuning.init('indi')
+#        ret.steerActuatorDelay = 0.1
+#        ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
+#        ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.0]
+#        ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
+#        ret.lateralTuning.indi.outerLoopGainV = [3.0, 6]
+#        ret.lateralTuning.indi.timeConstantBP = [2, 35]
+#        ret.lateralTuning.indi.timeConstantV = [0.2, 1.5]
+#        ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
+#        ret.lateralTuning.indi.actuatorEffectivenessV = [2.0, 1]
     
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
