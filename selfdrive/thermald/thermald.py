@@ -175,7 +175,7 @@ def thermald_thread():
   thermal_config = HARDWARE.get_thermal_config()
 
   # TODO: use PI controller for UNO
-  controller = PIDController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
+#  controller = PIDController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
 
   if params.get_bool("IsOnroad"):
     cloudlog.event("onroad flag not cleared")
