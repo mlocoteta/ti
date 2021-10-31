@@ -3,11 +3,12 @@ from cereal import car
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
-from selfdrive.car import create_gas_command
+from selfdrive.car import create_gas_command, apply_std_steer_torque_limits
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams, SERIAL_STEERING
 from opendbc.can.packer import CANPacker
 from common.params import Params
+
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -106,6 +107,7 @@ class CarController():
     self.signal_last = 0.
     self.apply_brake_last = 0
     self.last_pump_on_state = False
+    self.apply_steer_last = 0
     self.packer = CANPacker(dbc_name)
 
     self.params = CarControllerParams(CP)
@@ -152,8 +154,17 @@ class CarController():
     # **** process the car messages ****
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(interp(-actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
+    apply_steer = int(interp(actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
 
+    if (CS.CP.carFingerprint in SERIAL_STEERING): #SerialSteering requirs torque blending and limiting before EPS error
+      new_steer = int(round(apply_steer))
+      apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+      self.steer_rate_limited = new_steer != apply_steer 
+      self.apply_steer_last = apply_steer
+
+    # steer torque is converted back to CAN reference (positive when steering right)
+    apply_steer = -apply_steer
+    
     # Send CAN commands.
     can_sends = []
 
