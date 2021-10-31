@@ -11,7 +11,7 @@ from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, Cruis
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase, ACCEL_MAX, ACCEL_MIN
 from selfdrive.config import Conversions as CV
-
+from selfdrive import global_ti as TI
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -141,9 +141,20 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.66 # 13.37 is spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
-      ret.lateralTuning.pid.kf = 0.000025
+      if ret.enableTorqueInterceptor:
+        ret.lateralTuning.init('indi')
+        ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
+        ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.0]
+        ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
+        ret.lateralTuning.indi.outerLoopGainV = [3.0, 6]
+        ret.lateralTuning.indi.timeConstantBP = [2, 35]
+        ret.lateralTuning.indi.timeConstantV = [0.2, 1.5]
+        ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
+        ret.lateralTuning.indi.actuatorEffectivenessV = [2.0, 1]
+      else:
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
+        ret.lateralTuning.pid.kf = 0.000025
       tire_stiffness_factor = 0.8467
     
     elif candidate == CAR.ACURA_ILX:
@@ -338,6 +349,10 @@ class CarInterface(CarInterfaceBase):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
+    if self.CP.enableTorqueInterceptor and not TI.enabled:
+      TI.enabled = True
+      self.cp = self.CS.get_can_parser(self.CP)
+      
     if self.cp_body:
       self.cp_body.update_strings(can_strings)
 
