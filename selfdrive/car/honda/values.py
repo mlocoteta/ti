@@ -55,7 +55,7 @@ class TI_STATE:
 
 class LKAS_LIMITS:
   STEER_THRESHOLD = 5
-  TI_STEER_THRESHOLD = 5
+  TI_STEER_THRESHOLD = 15
 
 # Car button codes
 class CruiseButtons:
