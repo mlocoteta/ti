@@ -1,4 +1,4 @@
-class COLORS:
+class Colors:
   def __init__(self):
     self.HEADER = '\033[95m'
     self.OKBLUE = '\033[94m'
@@ -18,19 +18,24 @@ class COLORS:
     self.BLUE_GREEN = self.BASE(85)
 
     self.FAIL = self.RED
-    # self.INFO = self.PURPLE_BG
-    self.INFO = self.BASE(207)
+    self.INFO = self.PURPLE_BG
     self.SUCCESS = self.OKGREEN
     self.PROMPT = self.YELLOW
     self.DBLUE = '\033[36m'
     self.CYAN = self.BASE(39)
     self.WARNING = '\033[33m'
 
-  def BASE(self, col):  # seems to support more colors
+  def BASE(self, col):  # seems to support more Colors
     return '\33[38;5;{}m'.format(col)
 
-  def BASEBG(self, col):  # seems to support more colors
+  def BASEBG(self, col):  # seems to support more Colors
     return '\33[48;5;{}m'.format(col)
 
+COLORS = Colors()
 
-COLORS = COLORS()
+def opParams_warning(msg):
+  print('{}opParams WARNING: {}{}'.format(COLORS.WARNING, msg, COLORS.ENDC))
+
+
+def opParams_error(msg):
+  print('{}opParams ERROR: {}{}'.format(COLORS.FAIL, msg, COLORS.ENDC))
