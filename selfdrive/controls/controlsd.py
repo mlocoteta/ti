@@ -10,15 +10,13 @@ import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
+from common.op_params import opParams
+from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can, get_ti
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
-from selfdrive.controls.lib.latcontrol_pid import LatControlPID
-from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
-from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
-from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from selfdrive.controls.lib.latcontrol_live import LatControlLive
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -51,6 +49,7 @@ EventName = car.CarEvent.EventName
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     config_realtime_process(4 if TICI else 3, Priority.CTRL_HIGH)
+    self.opParams = opParams()
 
     self.accel_pressed = False
     self.decel_pressed = False
@@ -92,6 +91,7 @@ class Controls:
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
+    self.ti_ready = False
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
 
     # read params
@@ -126,15 +126,8 @@ class Controls:
 
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
+    self.LaC = LatControlLive(self.CP, OP=self.opParams)
 
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      self.LaC = LatControlAngle(self.CP)
-    elif self.CP.lateralTuning.which() == 'pid':
-      self.LaC = LatControlPID(self.CP)
-    elif self.CP.lateralTuning.which() == 'indi':
-      self.LaC = LatControlINDI(self.CP)
-    elif self.CP.lateralTuning.which() == 'lqr':
-      self.LaC = LatControlLQR(self.CP)
 
     self.initialized = False
     self.state = State.disabled
@@ -176,6 +169,13 @@ class Controls:
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
+    self.start_cruise_kph = 0
+    self.last_speed_limit_kph = 0
+    self.last_car_speed_at_sign_kph = 0
+    self.speed_limit_offset_kph = 0
+    self.has_seen_road_sign = False
+    self.desired_curvature = 0
+    self.prev_ctrl_state = log.ControlsState.new_message().as_reader()
 
   def update_events(self, CS):
     """Compute carEvents from carState"""
@@ -250,6 +250,22 @@ class Controls:
 
     if not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
+
+    if self.sm['pandaState'].torqueInterceptorDetected and not self.ti_ready:
+      self.ti_ready = True
+      print("TI is found")
+      self.CP.enableTorqueInterceptor = True
+     #Update CP based on torque_interceptor_ready
+      self.CP = get_ti()
+      #Update self.Lac with new CP for tuning
+     # if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      #  self.LaC = LatControlAngle(self.CP)
+      #elif self.CP.lateralTuning.which() == 'pid':
+      #  self.LaC = LatControlPID(self.CP)
+      #elif self.CP.lateralTuning.which() == 'indi':
+      #  self.LaC = LatControlINDI(self.CP)
+      #elif self.CP.lateralTuning.which() == 'lqr':
+      #  self.LaC = LatControlLQR(self.CP)
 
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
@@ -504,12 +520,14 @@ class Controls:
       actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits)
 
       # Steering PID loop and lateral MPC
-      desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
+      self.desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
-                                                                             lat_plan.curvatureRates)
+                                                                             lat_plan.curvatureRates,
+                                                                             self.opParams, CS, self.prev_ctrl_state)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params,
-                                                                             desired_curvature, desired_curvature_rate)
+                                                                             self.desired_curvature, desired_curvature_rate,
+                                                                             self.prev_ctrl_state)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
@@ -656,18 +674,17 @@ class Controls:
         controlsState.vCruise = controlsState.vCruise * 1.0000
 
 
-    if self.joystick_mode:
-      controlsState.lateralControlState.debugState = lac_log
-    elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    if self.LaC.ctrl_type == 'angle':
       controlsState.lateralControlState.angleState = lac_log
-    elif self.CP.lateralTuning.which() == 'pid':
+    elif self.LaC.ctrl_type == 'pid':
       controlsState.lateralControlState.pidState = lac_log
-    elif self.CP.lateralTuning.which() == 'lqr':
-      controlsState.lateralControlState.lqrState = lac_log
-    elif self.CP.lateralTuning.which() == 'indi':
+#    elif self.LaC.ctrl_type == 'lqr':
+#      controlsState.lateralControlState.lqrState = lac_log
+    elif self.LaC.ctrl_type == 'indi':
       controlsState.lateralControlState.indiState = lac_log
+    self.prev_ctrl_state = controlsState
     self.pm.send('controlsState', dat)
-
+    
     # carState
     car_events = self.events.to_msg()
     cs_send = messaging.new_message('carState')

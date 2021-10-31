@@ -11,6 +11,7 @@ from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
 from cereal import log
+from common.op_params import opParams, ENABLE_STEER_RATE_COST, STEER_RATE_COST, ENABLE_PLANNER_PARAMS
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
@@ -43,12 +44,18 @@ DESIRES = {
 
 
 class LateralPlanner():
-  def __init__(self, CP, use_lanelines=True, wide_camera=False):
+  def __init__(self, CP, use_lanelines=True, wide_camera=False, OP=None):
     self.use_lanelines = use_lanelines
+    if not OP:
+      OP = opParams()
+    self.op_params = OP
     self.LP = LanePlanner(wide_camera)
 
     self.last_cloudlog_t = 0
     self.steer_rate_cost = CP.steerRateCost
+
+    self.update_params(CP)
+    self.last_steer_rate_cost = self.steer_rate_cost
 
     self.setup_mpc()
     self.solution_invalid_cnt = 0
@@ -72,6 +79,8 @@ class LateralPlanner():
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
     self.second = 0.0
+  def update_params(self, CP):
+    self.steer_rate_cost = CP.steerRateCost if not self.op_params.get(ENABLE_PLANNER_PARAMS) and not self.op_params.get(ENABLE_STEER_RATE_COST) else self.op_params.get(STEER_RATE_COST)
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -90,6 +99,7 @@ class LateralPlanner():
     self.safe_desired_curvature_rate = 0.0
 
   def update(self, sm, CP):
+    self.update_params(CP)
     self.second += DT_MDL
     if self.second > 1.0:
       self.use_lanelines = not Params().get_bool("EndToEndToggle")
@@ -256,6 +266,7 @@ class LateralPlanner():
     if mpc_nans:
       self.libmpc.init()
       self.cur_state.curvature = measured_curvature
+      self.last_steer_rate_cost = self.steer_rate_cost
 
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t

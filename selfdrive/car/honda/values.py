@@ -23,21 +23,38 @@ class CarControllerParams():
     self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
     self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
 
-    self.BOSCH_GAS_LOOKUP_BP = [0., 2.0]  # 2m/s^2
-    self.BOSCH_GAS_LOOKUP_V = [0, 2000]
-    
     self.STEER_DELTA_UP = 7
     self.STEER_DELTA_DOWN = 14
     self.STEER_DRIVER_ALLOWANCE = 20
     self.STEER_DRIVER_MULTIPLIER = 1
     self.STEER_DRIVER_FACTOR = 4
-
+    
+    self.TI_STEER_MAX = 600                # theoretical max_steer 2047
+    self.TI_STEER_DELTA_UP = 5             # torque increase per refresh
+    self.TI_STEER_DELTA_UP_LOW = 2             # torque increase per refresh
+    self.TI_STEER_DELTA_DOWN = 15           # torque decrease per refresh
+    self.TI_STEER_DELTA_DOWN_LOW = 5 
+    self.TI_STEER_DRIVER_ALLOWANCE = 5    # allowed driver torque before start limiting
+    self.TI_STEER_DRIVER_MULTIPLIER = 40     # weight driver torque
+    self.TI_STEER_DRIVER_FACTOR = 1         # from dbc
+    self.TI_STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
+  
     if Params().get_bool('SmoothStop'):
       self.STOPPING_SPEED = 0.05
       self.STARTING_SPEED = 0.05
     else:
       self.STOPPING_SPEED = 0.3
       self.STARTING_SPEED = 0.3
+
+class TI_STATE:
+  DISCOVER = 0
+  OFF = 1
+  DRIVER_OVER = 2
+  RUN = 3
+
+class LKAS_LIMITS:
+  STEER_THRESHOLD = 5
+  TI_STEER_THRESHOLD = 5
 
 # Car button codes
 class CruiseButtons:
