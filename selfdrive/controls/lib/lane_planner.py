@@ -7,6 +7,7 @@ from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
 
 
+
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 if EON:
@@ -21,7 +22,7 @@ else:
 
 
 class LanePlanner:
-  def __init__(self, wide_camera=False):
+  def __init__(self, wide_camera=False, OP=None):
     self.ll_t = np.zeros((TRAJECTORY_SIZE,))
     self.ll_x = np.zeros((TRAJECTORY_SIZE,))
     self.lll_y = np.zeros((TRAJECTORY_SIZE,))
