@@ -63,6 +63,42 @@ def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque
 
   return int(round(float(apply_torque)))
 
+def apply_serial_steering_torque_mod(apply_steer, torque_boost_min, steer_warning_counter, steer_cooldown_counter):
+  # Init Local Variables
+  TORQUE_OVERCLOCK = 238
+  TORQUE_STEERING_CAP = 238
+  TORQUE_WARNING_COUNTER = 4
+  TORQUE_COOLDOWN = 2
+  TORQUE_MULTIPLIER = 1
+
+  # Start with old steer copy
+  new_steer = apply_steer
+
+  # Apply correct formula based on postive/negative apply_steer
+  if new_steer > 0: 
+    TORQUE_MULTIPLIER = (1 + (0.1 - (((apply_steer-torque_boost_min)/(TORQUE_STEERING_CAP-torque_boost_min)) / 10)) + 0.04)
+    new_steer = min(int(round(new_steer * TORQUE_MULTIPLIER)), TORQUE_STEERING_CAP)
+  else:
+    TORQUE_MULTIPLIER = (1 + (0.1 - (((apply_steer+torque_boost_min)/(-TORQUE_STEERING_CAP+torque_boost_min)) / 10)) + 0.04)
+    new_steer = max(int(round(new_steer * TORQUE_MULTIPLIER)), -TORQUE_STEERING_CAP)
+  # Reset the steering torque when the warning counter is too high
+  if (new_steer > TORQUE_OVERCLOCK) or (new_steer < -TORQUE_OVERCLOCK):
+    steer_warning_counter += 1
+    if (steer_warning_counter >= TORQUE_WARNING_COUNTER):
+      # apply torque limits steering backup before EPS error & cooldown
+      new_steer = apply_steer
+      steer_cooldown_counter += 1
+      # reset the torque warning after cooldown is done 
+      if steer_cooldown_counter >= TORQUE_COOLDOWN:
+        steer_warning_counter = 0
+        steer_cooldown_counter = 0
+  else:
+    # Normal torque range (near warning)
+    steer_warning_counter = 0
+    steer_cooldown_counter = 0
+
+
+  return new_steer
 
 def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, motor_torque, LIMITS):
   # limits due to comparison of commanded torque VS motor reported torque
