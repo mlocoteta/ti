@@ -1,4 +1,5 @@
 import numpy as np
+from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
 
 def apply_deadzone(error, deadzone):
@@ -195,8 +196,12 @@ class PIDController:
           (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
          not freeze_integrator:
         self.i = i
+    control = self.p + self.i + d
 
-    control = self.p + self.f + self.i + d
+    alpha = 1. - DT_CTRL / (self.op_params.get('lat_rc') + DT_CTRL)
+    self.delayed_output = self.delayed_output * alpha + control * (1. - alpha)
+    control = float(self.delayed_output) + self.f
+
     self.saturated = self._check_saturation(control, check_saturation, error)
 
     self.errors.append(float(error))
