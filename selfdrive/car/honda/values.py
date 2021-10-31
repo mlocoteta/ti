@@ -47,6 +47,12 @@ class CarControllerParams():
       self.STOPPING_SPEED = 0.3
       self.STARTING_SPEED = 0.3
 
+class TI_STATE:
+  DISCOVER = 0
+  OFF = 1
+  DRIVER_OVER = 2
+  RUN = 3
+
 class LKAS_LIMITS:
   STEER_THRESHOLD = 5
   TI_STEER_THRESHOLD = 5

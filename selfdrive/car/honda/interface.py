@@ -38,6 +38,10 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
 
+    print("in get_params, entering get_std_params")
+    if ret.enableTorqueInterceptor:
+      print("Recieving torque interceptor signal.")
+
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness
       ret.radarOffCan = True

@@ -56,12 +56,11 @@ def create_ti_steering_control(packer, car_fingerprint, apply_steer):
   key = 3294744160
   chksum = apply_steer
 
-  if car_fingerprint in GEN1:
-    values = {
-        "LKAS_REQUEST"     : apply_steer,
-        "CHKSUM"           : chksum,
-        "KEY"              : key
-     }
+  values = {
+      "LKAS_REQUEST"     : apply_steer,
+      "CHKSUM"           : chksum,
+      "KEY"              : key
+   }
 
   return packer.make_can_msg("CAM_LKAS2", 0, values)
 
