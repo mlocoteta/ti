@@ -41,7 +41,6 @@ class LatControlINDI():
     self.x = np.array([[0.], [0.], [0.]])
 
     self.enforce_rate_limit = CP.carName == "toyota"
-    self.steer_filter = FirstOrderFilter(0., self.RC, DT_CTRL)
 
     if OP is None:
       OP = opParams()
