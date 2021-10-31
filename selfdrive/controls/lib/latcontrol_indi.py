@@ -50,7 +50,7 @@ class LatControlINDI():
     self.reset()
 
   def reset(self):
-    self.steer_filter.x = 0.
+    self.delayed_output = 0.
     self.output_steer = 0.
     self.sat_count = 0.
     self.speed = 0.
@@ -103,7 +103,7 @@ class LatControlINDI():
       self.inner_loop_gain = interp(CS.vEgo, CP.lateralTuning.indi.innerLoopGainBP, CP.lateralTuning.indi.innerLoopGainV)
       self.sat_limit = CP.steerLimitTimer
 
-    self.steer_filter = FirstOrderFilter(0., self.RC, DT_CTRL)
+    self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
 
     # Update Kalman filter
     y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
@@ -119,14 +119,14 @@ class LatControlINDI():
     if CS.vEgo < 0.3 or not active:
       indi_log.active = False
       self.output_steer = 0.0
-      self.steer_filter.x = 0.0
+      self.delayed_output = 0.0
     else:
 
       rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo)
 
       # Expected actuator value
-      self.steer_filter.update_alpha(self.RC)
-      self.steer_filter.update(self.output_steer)
+      alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
+      self.delayed_output = self.delayed_output * alpha + self.output_steer * (1. - alpha)
 
       # Compute acceleration error
       rate_sp = self.outer_loop_gain * (steers_des - self.x[0]) + rate_des
@@ -144,7 +144,7 @@ class LatControlINDI():
       # Enforce rate limit
       if True: #self.enforce_rate_limit:
         steer_max = float(self.params.TI_STEER_MAX)
-        new_output_steer_cmd = steer_max * (self.steer_filter.x + delta_u)
+        new_output_steer_cmd = steer_max * (self.delayed_output + delta_u)
         prev_output_steer_cmd = steer_max * self.output_steer
         new_output_steer_cmd = apply_ti_steer_torque_limits(new_output_steer_cmd, prev_output_steer_cmd, prev_output_steer_cmd, self.params)
         self.output_steer = new_output_steer_cmd / steer_max
@@ -158,7 +158,7 @@ class LatControlINDI():
       indi_log.rateSetPoint = float(rate_sp)
       indi_log.accelSetPoint = float(accel_sp)
       indi_log.accelError = float(accel_error)
-      indi_log.delayedOutput = float(self.steer_filter.x)
+      indi_log.delayedOutput = float(self.delayed_output)
       indi_log.delta = float(delta_u)
       indi_log.output = float(self.output_steer)
 
