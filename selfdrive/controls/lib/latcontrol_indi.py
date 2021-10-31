@@ -41,6 +41,7 @@ class LatControlINDI():
     self.x = np.array([[0.], [0.], [0.]])
 
     self.enforce_rate_limit = CP.carName == "toyota"
+    self.steer_filter = FirstOrderFilter(0., self.RC, DT_CTRL)
 
     if OP is None:
       OP = opParams()
@@ -142,7 +143,7 @@ class LatControlINDI():
         delta_u = 0
 
       # Enforce rate limit
-      if self.enforce_rate_limit:
+      if True: #self.enforce_rate_limit:
         steer_max = float(self.params.TI_STEER_MAX)
         new_output_steer_cmd = steer_max * (self.steer_filter.x + delta_u)
         prev_output_steer_cmd = steer_max * self.output_steer
