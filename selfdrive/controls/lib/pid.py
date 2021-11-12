@@ -14,7 +14,7 @@ def apply_deadzone(error, deadzone):
     error = 0.
   return error
 
-class PIDController:
+class PIDController():
   def __init__(self, k_p, k_i, k_d, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1., convert=None, p_bp_key=None, p_v_key=None, i_bp_key=None, i_v_key=None,d_bp_key=None, d_v_key=None, f_key=None, sat_key=None, OP=None, use_ops=False):
     self._k_p = self._og_k_p = k_p  # proportional gain
     self._k_i = self._og_k_i = k_i  # integral gain
@@ -129,7 +129,8 @@ class PIDController:
           (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
          not freeze_integrator:
         self.i = i
-    control = self.p + self.i + d
+
+    control = self.p + self.f + self.i + d
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
 
