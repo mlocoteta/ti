@@ -166,6 +166,7 @@ class opParams:
                         'indi_actuator_effectiveness': Param(9.0, VT.number, live=True, depends_on=SHOW_INDI_PARAMS),
                         SHOW_ACTUATOR_DELAY_PARAMS: Param(False, bool, live=True, depends_on=ENABLE_LAT_PARAMS),
                         STEER_ACTUATOR_DELAY: Param(0.60, VT.number, live=True, depends_on=SHOW_ACTUATOR_DELAY_PARAMS),
+                        STEER_RATIO: Param(13.66, VT.number, live=True, depends_on=SHOW_ACTUATOR_DELAY_PARAMS),
                         ENABLE_ACTUATOR_DELAY_BPS: Param(False, bool, live=True, depends_on=SHOW_ACTUATOR_DELAY_PARAMS),
                         STEER_ACTUATOR_DELAY_BP: Param([0.], [list, float, int], live=True, depends_on=ENABLE_ACTUATOR_DELAY_BPS),
                         STEER_ACTUATOR_DELAY_V: Param([0.6], [list, float, int], live=True, depends_on=ENABLE_ACTUATOR_DELAY_BPS),
@@ -508,6 +509,7 @@ STEER_LIMIT_TIMER = 'steer_limit_timer'
 
 SHOW_ACTUATOR_DELAY_PARAMS = "show_actuator_delay_params"
 STEER_ACTUATOR_DELAY = 'steer_actuator_delay'
+STEER_RATIO = 'steer ratio'
 ENABLE_ACTUATOR_DELAY_BPS = 'enable_actuator_delay_breakpoints'
 STEER_ACTUATOR_DELAY_BP = 'steer_actuator_delay_bp'
 STEER_ACTUATOR_DELAY_V = 'steer_actuator_delay_v'

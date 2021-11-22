@@ -61,7 +61,7 @@ def apply_ti_steer_torque_limits(apply_torque, apply_torque_last, driver_torque,
       apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN, -LIMITS.TI_STEER_DELTA_UP),
                           apply_torque_last + LIMITS.TI_STEER_DELTA_UP)
   else:
-    if apply_torque < 150:
+    if apply_torque < -150:
       apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP_LOW,
                         min(apply_torque_last + LIMITS.TI_STEER_DELTA_DOWN_LOW, LIMITS.TI_STEER_DELTA_UP_LOW))
     else:
