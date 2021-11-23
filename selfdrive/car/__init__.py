@@ -89,6 +89,13 @@ def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque
 
   return int(round(float(apply_torque)))
 
+def wiggle(apply_steer,apply_steer_last):
+
+  if apply_steer == apply_steer_last:
+    apply_steer +=1
+
+  return int(round(apply_steer))
+
 def apply_serial_steering_torque_mod(apply_steer, torque_boost_min, steer_warning_counter, steer_cooldown_counter):
   # Init Local Variables
   TORQUE_OVERCLOCK = 238
