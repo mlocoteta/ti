@@ -3,12 +3,11 @@ from cereal import car
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
-from selfdrive.car import create_gas_command, apply_std_steer_torque_limits, apply_serial_steering_torque_mod, apply_ti_steer_torque_limits
+from selfdrive.car import create_gas_command, apply_std_steer_torque_limits, apply_serial_steering_torque_mod, apply_ti_steer_torque_limits, wiggle
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams, SERIAL_STEERING
 from opendbc.can.packer import CANPacker
 from common.params import Params
-
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -156,12 +155,13 @@ class CarController():
       new_steer = int(round(actuators.steer * P.TI_STEER_MAX))
       apply_steer_ti = apply_ti_steer_torque_limits(new_steer, self.apply_steer_last_ti,
                                                   CS.out.steeringTorque, P)
+      apply_steer_ti = wiggle(apply_steer_ti, self.apply_steer_last_ti)
       self.apply_steer_last_ti = apply_steer_ti
 
     
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(interp(actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
-    if (CS.CP.carFingerprint in SERIAL_STEERING and not CS.CP.enableTorqueInterceptor): # Dynamic torque boost if above threshold, smooth torque blend otherwise
+    if (CS.CP.carFingerprint in SERIAL_STEERING): # Dynamic torque boost if above threshold, smooth torque blend otherwise
       if (apply_steer >= self.steer_torque_boost_min) or (apply_steer <= -self.steer_torque_boost_min):
         apply_steer = apply_serial_steering_torque_mod(apply_steer, self.steer_torque_boost_min, self.apply_steer_warning_counter, self.apply_steer_cooldown_counter)
       else:
@@ -192,7 +192,7 @@ class CarController():
     #if ti is enabled we don't have to send apply steer to the stock system but a signal should still be sent.
     if CS.CP.enableTorqueInterceptor:
       can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint,apply_steer_ti))
-      apply_steer = 0 
+      #apply_steer = 0 
       can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
         lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
     else:
