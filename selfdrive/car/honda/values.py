@@ -1,6 +1,7 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 from common.params import Params
+from common.op_params import SHOW_RATE_PARAMS, ENABLE_RATE_PARAMS, STOCK_STEER_MAX, TI_HIGH_BP, TI_STEER_MAX, TI_STEER_DELTA_UP, TI_STEER_DELTA_UP_LOW, TI_STEER_DELTA_DOWN, TI_STEER_DELTA_DOWN_LOW, STOCK_DELTA_UP, STOCK_DELTA_DOWN, STOCK_STEER_MAX, TI_JUMPING_POINT
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -23,6 +24,7 @@ class CarControllerParams():
     self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
     self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
 
+    self.STEER_MAX = 238
     self.STEER_DELTA_UP = 7
     self.STEER_DELTA_DOWN = 14
     self.STEER_DRIVER_ALLOWANCE = 20
@@ -38,7 +40,23 @@ class CarControllerParams():
     self.TI_STEER_DRIVER_MULTIPLIER = 40     # weight driver torque
     self.TI_STEER_DRIVER_FACTOR = 1         # from dbc
     self.TI_STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
-  
+    self.TI_HIGH_BP = 150
+    self.TI_JUMPING_POINT = 0
+
+    if (self.op_params.get(ENABLE_RATE_PARAMS)):
+      self.STEER_DELTA_UP = self.op_params.get(STOCK_DELTA_UP)
+      self.STEER_DELTA_DOWN = self.op_params.get(STOCK_DELTA_DOWN)
+      self.STEER_MAX = self.op_params.get(STOCK_STEER_MAX)
+      self.TI_STEER_MAX = self.op_params.get(TI_STEER_MAX)                # theoretical max_steer 2047
+      self.TI_STEER_DELTA_UP = self.op_params.get(TI_STEER_DELTA_UP)             # torque increase per refresh
+      self.TI_STEER_DELTA_UP_LOW = self.op_params.get(TI_STEER_DELTA_UP_LOW) # torque increase per refresh
+      self.TI_STEER_DELTA_DOWN = self.op_params.get(TI_STEER_DELTA_DOWN)           # torque decrease per refresh
+      self.TI_STEER_DELTA_DOWN_LOW = self.op_params.get(TI_STEER_DELTA_DOWN_LOW) 
+      self.TI_HIGH_BP = self.op_params.get(TI_HIGH_BP)
+      self.TI_JUMPING_POINT = self.op_params.get(TI_JUMPING_POINT)
+      if self.TI_JUMPING_POINT > 0:
+        self.TI_STEER_MAX = (self.op_params.get(TI_STEER_MAX) - self.TI_JUMPING_POINT)
+
     if Params().get_bool('SmoothStop'):
       self.STOPPING_SPEED = 0.05
       self.STARTING_SPEED = 0.05

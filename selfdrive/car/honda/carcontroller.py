@@ -157,6 +157,10 @@ class CarController():
                                                   CS.out.steeringTorque, P)
       apply_steer_ti = wiggle(apply_steer_ti, self.apply_steer_last_ti)
       self.apply_steer_last_ti = apply_steer_ti
+      if apply_steer_ti > 0:
+        apply_steer_ti = apply_steer_ti + P.TI_JUMPING_POINT
+      else:
+        apply_steer_ti = apply_steer_ti - P.TI_JUMPING_POINT
 
     
     # steer torque is converted back to CAN reference (positive when steering right)
@@ -164,6 +168,7 @@ class CarController():
     if (CS.CP.carFingerprint in SERIAL_STEERING): # Dynamic torque boost if above threshold, smooth torque blend otherwise
       if (apply_steer >= self.steer_torque_boost_min) or (apply_steer <= -self.steer_torque_boost_min):
         apply_steer = apply_serial_steering_torque_mod(apply_steer, self.steer_torque_boost_min, self.apply_steer_warning_counter, self.apply_steer_cooldown_counter)
+        apply_steer = apply_std_steer_torque_limits(apply_steer, -(self.apply_steer_last), CS.out.steeringTorque, self.params)
       else:
         apply_steer = apply_std_steer_torque_limits(apply_steer, -(self.apply_steer_last), CS.out.steeringTorque, self.params)
         self.apply_steer_warning_counter = 0
