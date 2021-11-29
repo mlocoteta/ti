@@ -7,9 +7,7 @@ from common.realtime import DT_CTRL
 from selfdrive.car import apply_toyota_steer_torque_limits, apply_ti_steer_torque_limits
 from common.op_params import opParams, ENABLE_LAT_PARAMS, STEER_LIMIT_TIMER, ENABLE_INDI_BREAKPOINTS, \
                             INDI_INNER_GAIN_BP, INDI_INNER_GAIN_V, INDI_OUTER_GAIN_BP, INDI_OUTER_GAIN_V, \
-                            INDI_TIME_CONSTANT_BP, INDI_TIME_CONSTANT_V, INDI_ACTUATOR_EFFECTIVENESS_BP, \
-                            INDI_ACTUATOR_EFFECTIVENESS_V, ENABLE_MULTI_INDI_BREAKPOINTS, INDI_MULTI_BREAKPOINT_SOURCE, \
-                            eval_breakpoint_source, interp_multi_bp
+                            INDI_TIME_CONSTANT_BP, INDI_TIME_CONSTANT_V, INDI_ACTUATOR_EFFECTIVENESS_BP, INDI_ACTUATOR_EFFECTIVENESS_V
 from selfdrive.car.honda.values import CarControllerParams
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 
@@ -73,19 +71,12 @@ class LatControlINDI():
     if self.op_params.get(ENABLE_LAT_PARAMS):
       self.sat_limit = self.op_params.get(STEER_LIMIT_TIMER)
 
-      use_multi = self.op_params.get(ENABLE_MULTI_INDI_BREAKPOINTS)
       use_bp = self.op_params.get(ENABLE_INDI_BREAKPOINTS)
 
-      if use_multi or use_bp:
+      if use_bp:
         postfix = ''
-
-        if use_multi:
-          postfix = '_multi'
-          i = eval_breakpoint_source(self.op_params.get(INDI_MULTI_BREAKPOINT_SOURCE), CS, ctrl_state)
-          itrp = interp_multi_bp
-        else:
-          i = CS.vEgo
-          itrp = interp
+        i = CS.vEgo
+        itrp = interp
 
         self.G = itrp(i, self.op_params.get(INDI_ACTUATOR_EFFECTIVENESS_BP + postfix), self.op_params.get(INDI_ACTUATOR_EFFECTIVENESS_V + postfix))
         self.outer_loop_gain = itrp(i, self.op_params.get(INDI_OUTER_GAIN_BP + postfix), self.op_params.get(INDI_OUTER_GAIN_V + postfix))
