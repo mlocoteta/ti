@@ -1,5 +1,6 @@
 # functions common among cars
 from common.numpy_fast import clip
+from common.op_params import opParams, SHOW_RATE_PARAMS, ENABLE_RATE_PARAMS, STOCK_STEER_MAX, TI_HIGH_BP, TI_STEER_MAX, TI_STEER_DELTA_UP, TI_STEER_DELTA_UP_LOW, TI_STEER_DELTA_DOWN, TI_STEER_DELTA_DOWN_LOW, STOCK_DELTA_UP, STOCK_DELTA_DOWN, STOCK_STEER_MAX, TI_JUMPING_POINT
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
@@ -45,28 +46,29 @@ def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None):
 
 #alternate settings when using torque interceptor. May or may not be useful to some users/branches.
 def apply_ti_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
+  op_params = opParams()
   # limits due to driver torque
-  driver_max_torque = LIMITS.TI_STEER_MAX + (LIMITS.TI_STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.TI_STEER_DRIVER_FACTOR) * LIMITS.TI_STEER_DRIVER_MULTIPLIER
-  driver_min_torque = -LIMITS.TI_STEER_MAX + (-LIMITS.TI_STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.TI_STEER_DRIVER_FACTOR) * LIMITS.TI_STEER_DRIVER_MULTIPLIER
-  max_steer_allowed = max(min(LIMITS.TI_STEER_MAX, driver_max_torque), 0)
-  min_steer_allowed = min(max(-LIMITS.TI_STEER_MAX, driver_min_torque), 0)
+  driver_max_torque = op_params.get(TI_STEER_MAX) + (LIMITS.TI_STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.TI_STEER_DRIVER_FACTOR) * LIMITS.TI_STEER_DRIVER_MULTIPLIER
+  driver_min_torque = -op_params.get(TI_STEER_MAX) +(-LIMITS.TI_STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.TI_STEER_DRIVER_FACTOR) * LIMITS.TI_STEER_DRIVER_MULTIPLIER
+  max_steer_allowed = max(min(op_params.get(TI_STEER_MAX), driver_max_torque), 0)
+  min_steer_allowed = min(max(-op_params.get(TI_STEER_MAX), driver_min_torque), 0)
   apply_torque = clip(apply_torque, min_steer_allowed, max_steer_allowed)
 
   # slow rate if steer torque increases in magnitude
   if apply_torque_last > 0:
-    if apply_torque > LIMITS.TI_HIGH_BP:
-      apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN_LOW, -LIMITS.TI_STEER_DELTA_UP_LOW),
-                          apply_torque_last + LIMITS.TI_STEER_DELTA_UP_LOW)
+    if apply_torque > op_params.get(TI_HIGH_BP):
+      apply_torque = clip(apply_torque, max(apply_torque_last - op_params.get(TI_STEER_DELTA_DOWN_LOW) , -op_params.get(TI_STEER_DELTA_UP_LOW) ),
+                          apply_torque_last + op_params.get(TI_STEER_DELTA_UP_LOW))
     else: 
-      apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN, -LIMITS.TI_STEER_DELTA_UP),
-                          apply_torque_last + LIMITS.TI_STEER_DELTA_UP)
+      apply_torque = clip(apply_torque, max(apply_torque_last - op_params.get(TI_STEER_DELTA_DOWN), -op_params.get(TI_STEER_DELTA_UP) ),
+                          apply_torque_last + op_params.get(TI_STEER_DELTA_UP))
   else:
-    if apply_torque < -(LIMITS.TI_HIGH_BP):
-      apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP_LOW,
-                        min(apply_torque_last + LIMITS.TI_STEER_DELTA_DOWN_LOW, LIMITS.TI_STEER_DELTA_UP_LOW))
+    if apply_torque < -(op_params.get(TI_HIGH_BP)):
+      apply_torque = clip(apply_torque, apply_torque_last - op_params.get(TI_STEER_DELTA_UP_LOW),
+                        min(apply_torque_last + op_params.get(TI_STEER_DELTA_DOWN_LOW), op_params.get(TI_STEER_DELTA_UP_LOW)))
     else:
-      apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP,
-                        min(apply_torque_last + LIMITS.TI_STEER_DELTA_DOWN, LIMITS.TI_STEER_DELTA_UP))
+      apply_torque = clip(apply_torque, apply_torque_last - op_params.get(TI_STEER_DELTA_UP),
+                        min(apply_torque_last + op_params.get(TI_STEER_DELTA_DOWN), op_params.get(TI_STEER_DELTA_UP)))
 
   return int(round(float(apply_torque)))
 
@@ -97,6 +99,7 @@ def wiggle(apply_steer,apply_steer_last):
   return int(round(apply_steer))
 
 def apply_serial_steering_torque_mod(apply_steer, torque_boost_min, steer_warning_counter, steer_cooldown_counter):
+  
   # Init Local Variables
   TORQUE_OVERCLOCK = 238
   TORQUE_STEERING_CAP = 238
