@@ -17,7 +17,8 @@ class CarControllerParams():
     assert(CP.lateralParams.torqueBP[0] == 0)
     self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
     self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
-    self.op_params = opParams()
+
+
     self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
     self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
 
@@ -42,20 +43,6 @@ class CarControllerParams():
     self.TI_STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
     self.TI_HIGH_BP = 150
     self.TI_JUMPING_POINT = 0
-
-    if (self.op_params.get(ENABLE_RATE_PARAMS)):
-      self.STEER_DELTA_UP = self.op_params.get(STOCK_DELTA_UP)
-      self.STEER_DELTA_DOWN = self.op_params.get(STOCK_DELTA_DOWN)
-      self.STEER_MAX = self.op_params.get(STOCK_STEER_MAX)
-      self.TI_STEER_MAX = self.op_params.get(TI_STEER_MAX)                # theoretical max_steer 2047
-      self.TI_STEER_DELTA_UP = self.op_params.get(TI_STEER_DELTA_UP)             # torque increase per refresh
-      self.TI_STEER_DELTA_UP_LOW = self.op_params.get(TI_STEER_DELTA_UP_LOW) # torque increase per refresh
-      self.TI_STEER_DELTA_DOWN = self.op_params.get(TI_STEER_DELTA_DOWN)           # torque decrease per refresh
-      self.TI_STEER_DELTA_DOWN_LOW = self.op_params.get(TI_STEER_DELTA_DOWN_LOW) 
-      self.TI_HIGH_BP = self.op_params.get(TI_HIGH_BP)
-      self.TI_JUMPING_POINT = self.op_params.get(TI_JUMPING_POINT)
-      if self.TI_JUMPING_POINT > 0:
-        self.TI_STEER_MAX = (self.op_params.get(TI_STEER_MAX) - self.TI_JUMPING_POINT)
 
     if Params().get_bool('SmoothStop'):
       self.STOPPING_SPEED = 0.05
