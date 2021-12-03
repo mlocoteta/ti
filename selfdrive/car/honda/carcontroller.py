@@ -134,8 +134,8 @@ class CarController():
       P.TI_STEER_DELTA_DOWN_LOW = self.op_params.get(TI_STEER_DELTA_DOWN_LOW) 
       P.TI_HIGH_BP = self.op_params.get(TI_HIGH_BP)
       P.TI_JUMPING_POINT = self.op_params.get(TI_JUMPING_POINT)
-      if self.TI_JUMPING_POINT > 0:
-        P.TI_STEER_MAX = (self.op_params.get(TI_STEER_MAX) - self.TI_JUMPING_POINT)
+      if P.TI_JUMPING_POINT > 0:
+        P.TI_STEER_MAX = (self.op_params.get(TI_STEER_MAX) - P.TI_JUMPING_POINT)
 
 
     if enabled:
