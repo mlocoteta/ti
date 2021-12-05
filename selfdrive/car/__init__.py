@@ -54,14 +54,14 @@ def apply_ti_steer_torque_limits(apply_torque, apply_torque_last, driver_torque,
 
   # slow rate if steer torque increases in magnitude
   if apply_torque_last > 0:
-    if apply_torque > 200:
+    if apply_torque > LIMITS.TI_HIGH_BP:
       apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN_LOW, -LIMITS.TI_STEER_DELTA_UP_LOW),
                           apply_torque_last + LIMITS.TI_STEER_DELTA_UP_LOW)
     else: 
       apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN, -LIMITS.TI_STEER_DELTA_UP),
                           apply_torque_last + LIMITS.TI_STEER_DELTA_UP)
   else:
-    if apply_torque < 200:
+    if apply_torque < -(LIMITS.TI_HIGH_BP):
       apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP_LOW,
                         min(apply_torque_last + LIMITS.TI_STEER_DELTA_DOWN_LOW, LIMITS.TI_STEER_DELTA_UP_LOW))
     else:
@@ -88,6 +88,13 @@ def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque
                         min(apply_torque_last + LIMITS.STEER_DELTA_DOWN, LIMITS.STEER_DELTA_UP))
 
   return int(round(float(apply_torque)))
+
+def wiggle(apply_steer,apply_steer_last):
+
+  if apply_steer == apply_steer_last:
+    apply_steer +=1
+
+  return int(round(apply_steer))
 
 def apply_serial_steering_torque_mod(apply_steer, torque_boost_min, steer_warning_counter, steer_cooldown_counter):
   # Init Local Variables

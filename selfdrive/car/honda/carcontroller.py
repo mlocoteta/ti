@@ -3,11 +3,13 @@ from cereal import car
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
-from selfdrive.car import create_gas_command, apply_std_steer_torque_limits, apply_serial_steering_torque_mod, apply_ti_steer_torque_limits
+from selfdrive.car import create_gas_command, apply_std_steer_torque_limits, apply_serial_steering_torque_mod, apply_ti_steer_torque_limits, wiggle
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import OLD_NIDEC_LONG_CONTROL, CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, CarControllerParams, SERIAL_STEERING
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits, apply_serial_steering_torque_mod
+from common.params import Params
+from common.op_params import opParams, SHOW_RATE_PARAMS, ENABLE_RATE_PARAMS, STOCK_STEER_MAX, TI_HIGH_BP, TI_STEER_MAX, TI_STEER_DELTA_UP, TI_STEER_DELTA_UP_LOW, TI_STEER_DELTA_DOWN, TI_STEER_DELTA_DOWN_LOW, STOCK_DELTA_UP, STOCK_DELTA_DOWN, STOCK_STEER_MAX, TI_JUMPING_POINT
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -79,7 +81,7 @@ HUDData = namedtuple("HUDData",
 
 
 class CarController():
-  def __init__(self, dbc_name, CP, VM):
+  def __init__(self, dbc_name, CP, VM, OP=None):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
@@ -92,8 +94,9 @@ class CarController():
     self.apply_steer_cooldown_counter = 0
     self.steer_torque_boost_min = 70
     self.packer = CANPacker(dbc_name)
-    self.new_radar_config = False
-
+    if not OP:
+      OP = opParams()
+    self.op_params = OP
     self.params = CarControllerParams(CP)
 
   def update(self, enabled, CS, frame, actuators,
@@ -101,6 +104,21 @@ class CarController():
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
+ 
+    if (self.op_params.get(ENABLE_RATE_PARAMS)):
+      P.STEER_DELTA_UP = self.op_params.get(STOCK_DELTA_UP)
+      P.STEER_DELTA_DOWN = self.op_params.get(STOCK_DELTA_DOWN)
+      P.STEER_MAX = self.op_params.get(STOCK_STEER_MAX)
+      P.TI_STEER_MAX = self.op_params.get(TI_STEER_MAX)                # theoretical max_steer 2047
+      P.TI_STEER_DELTA_UP = self.op_params.get(TI_STEER_DELTA_UP)             # torque increase per refresh
+      P.TI_STEER_DELTA_UP_LOW = self.op_params.get(TI_STEER_DELTA_UP_LOW) # torque increase per refresh
+      P.TI_STEER_DELTA_DOWN = self.op_params.get(TI_STEER_DELTA_DOWN)           # torque decrease per refresh
+      P.TI_STEER_DELTA_DOWN_LOW = self.op_params.get(TI_STEER_DELTA_DOWN_LOW) 
+      P.TI_HIGH_BP = self.op_params.get(TI_HIGH_BP)
+      P.TI_JUMPING_POINT = self.op_params.get(TI_JUMPING_POINT)
+      if P.TI_JUMPING_POINT > 0:
+        P.TI_STEER_MAX = (self.op_params.get(TI_STEER_MAX) - P.TI_JUMPING_POINT)
+
 
     # *** apply brake hysteresis ***
     brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
@@ -139,22 +157,19 @@ class CarController():
       new_steer = int(round(actuators.steer * P.TI_STEER_MAX))
       apply_steer_ti = apply_ti_steer_torque_limits(new_steer, self.apply_steer_last_ti,
                                                   CS.out.steeringTorque, P)
+      apply_steer_ti = wiggle(apply_steer_ti, self.apply_steer_last_ti)
       self.apply_steer_last_ti = apply_steer_ti
 
     
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(interp(actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
-    if (CS.CP.carFingerprint in SERIAL_STEERING and not CS.CP.enableTorqueInterceptor): # Dynamic torque boost if above threshold, smooth torque blend otherwise
+    if (CS.CP.carFingerprint in SERIAL_STEERING): # Dynamic torque boost if above threshold, smooth torque blend otherwise
       if (apply_steer >= self.steer_torque_boost_min) or (apply_steer <= -self.steer_torque_boost_min):
         apply_steer = apply_serial_steering_torque_mod(apply_steer, self.steer_torque_boost_min, self.apply_steer_warning_counter, self.apply_steer_cooldown_counter)
       else:
-        apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+        apply_steer = apply_std_steer_torque_limits(apply_steer, -(self.apply_steer_last), CS.out.steeringTorque, self.params)
         self.apply_steer_warning_counter = 0
         self.apply_steer_cooldown_counter = 0
-      # Add low steering torque cap for low speeds, manual turning, & manual interventions
-      #if (CS.steer_torque_limited and (apply_steer > 60 or apply_steer < -60)):
-      #  apply_steer = 60 if apply_steer > 0 else -60
-    
   
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = -apply_steer
@@ -175,7 +190,6 @@ class CarController():
     #if ti is enabled we don't have to send apply steer to the stock system but a signal should still be sent.
     if CS.CP.enableTorqueInterceptor:
       can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint,apply_steer_ti))
-      apply_steer = 0 
       can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
         lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
     else:

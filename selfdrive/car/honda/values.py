@@ -2,6 +2,8 @@
 
 from cereal import car
 from selfdrive.car import dbc_dict
+from common.params import Params
+from common.op_params import opParams, SHOW_RATE_PARAMS, ENABLE_RATE_PARAMS, STOCK_STEER_MAX, TI_HIGH_BP, TI_STEER_MAX, TI_STEER_DELTA_UP, TI_STEER_DELTA_UP_LOW, TI_STEER_DELTA_DOWN, TI_STEER_DELTA_DOWN_LOW, STOCK_DELTA_UP, STOCK_DELTA_DOWN, STOCK_STEER_MAX, TI_JUMPING_POINT
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -10,37 +12,41 @@ class CarControllerParams():
   ACCEL_MAX = 3.2
 
   def __init__(self, CP):
-      self.BRAKE_MAX = 1024//4
-      self.STEER_MAX = CP.lateralParams.torqueBP[-1]
-      # mirror of list (assuming first item is zero) for interp of signed request values
-      assert(CP.lateralParams.torqueBP[0] == 0)
-      assert(CP.lateralParams.torqueBP[0] == 0)
-      self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
-      self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
+    self.BRAKE_MAX = 1024//4
+    self.STEER_MAX = CP.lateralParams.torqueBP[-1]
+    # mirror of list (assuming first item is zero) for interp of signed request values
+    assert(CP.lateralParams.torqueBP[0] == 0)
+    assert(CP.lateralParams.torqueBP[0] == 0)
+    self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
+    self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
-      self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
-      self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
 
-      self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
-      self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
+    self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
+    self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
 
-      self.STEER_DELTA_UP = 7
-      self.STEER_DELTA_DOWN = 14
-      self.STEER_DRIVER_ALLOWANCE = 20
-      self.STEER_DRIVER_MULTIPLIER = 1
-      self.STEER_DRIVER_FACTOR = 4
-      
-      self.TI_STEER_MAX = 600                # theoretical max_steer 2047
-      self.TI_STEER_DELTA_UP = 5             # torque increase per refresh
-      self.TI_STEER_DELTA_UP_LOW = 2             # torque increase per refresh
-      self.TI_STEER_DELTA_DOWN = 15           # torque decrease per refresh
-      self.TI_STEER_DELTA_DOWN_LOW = 5 
-      self.TI_STEER_DRIVER_ALLOWANCE = 5    # allowed driver torque before start limiting
-      self.TI_STEER_DRIVER_MULTIPLIER = 40     # weight driver torque
-      self.TI_STEER_DRIVER_FACTOR = 1         # from dbc
-      self.TI_STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
+    self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
+    self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
+
+    self.STEER_MAX = 238
+    self.STEER_DELTA_UP = 7
+    self.STEER_DELTA_DOWN = 14
+    self.STEER_DRIVER_ALLOWANCE = 20
+    self.STEER_DRIVER_MULTIPLIER = 1
+    self.STEER_DRIVER_FACTOR = 4
+    
+    self.TI_STEER_MAX = 230                # theoretical max_steer 2047
+    self.TI_STEER_DELTA_UP = 6             # torque increase per refresh
+    self.TI_STEER_DELTA_UP_LOW = 6             # torque increase per refresh
+    self.TI_STEER_DELTA_DOWN = 15           # torque decrease per refresh
+    self.TI_STEER_DELTA_DOWN_LOW = 15 
+    self.TI_STEER_DRIVER_ALLOWANCE = 5    # allowed driver torque before start limiting
+    self.TI_STEER_DRIVER_MULTIPLIER = 40     # weight driver torque
+    self.TI_STEER_DRIVER_FACTOR = 1         # from dbc
+    self.TI_STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
+    self.TI_HIGH_BP = 150
+    self.TI_JUMPING_POINT = 0
+
   
-
 class TI_STATE:
   DISCOVER = 0
   OFF = 1

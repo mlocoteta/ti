@@ -4,11 +4,11 @@ from common.realtime import DT_MDL
 from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 from common.op_params import ENABLE_LAT_PARAMS, ENABLE_ACTUATOR_DELAY_BPS, STEER_ACTUATOR_DELAY, \
-                            STEER_ACTUATOR_DELAY_BP, STEER_ACTUATOR_DELAY_V, \
-                            ENABLE_ACTUATOR_DELAY_BPS_MULTI, \
-                            STEER_ACTUATOR_DELAY_BP_MULTI, STEER_ACTUATOR_DELAY_V_MULTI, STEER_DELAY_MULTI_BP_SOURCE, \
-                            eval_breakpoint_source, interp_multi_bp, \
-                            ENABLE_CURVE_RATE_LIMITS, MAX_CURVE_RATE_BP, MAX_CURVE_RATE_V
+                            STEER_ACTUATOR_DELAY_BP, STEER_ACTUATOR_DELAY_V
+#                            ENABLE_ACTUATOR_DELAY_BPS_MULTI, \
+#                            STEER_ACTUATOR_DELAY_BP_MULTI, STEER_ACTUATOR_DELAY_V_MULTI, STEER_DELAY_MULTI_BP_SOURCE, \
+#                            eval_breakpoint_source, interp_multi_bp, \
+#                            ENABLE_CURVE_RATE_LIMITS, MAX_CURVE_RATE_BP, MAX_CURVE_RATE_V
 
 
 # kph
@@ -95,14 +95,14 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, op_
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
   if enable_lat_params:
-    if op_params.get(ENABLE_ACTUATOR_DELAY_BPS_MULTI):
-      delay = interp_multi_bp(eval_breakpoint_source(op_params.get(STEER_DELAY_MULTI_BP_SOURCE), CS, controls_state),
-                              op_params.get(STEER_ACTUATOR_DELAY_BP_MULTI),
-                              op_params.get(STEER_ACTUATOR_DELAY_V_MULTI))
-    elif op_params.get(ENABLE_ACTUATOR_DELAY_BPS):
-      delay = interp(v_ego, op_params.get(STEER_ACTUATOR_DELAY_BP), op_params.get(STEER_ACTUATOR_DELAY_V))
-    else:
-      delay = op_params.get(STEER_ACTUATOR_DELAY)
+#    if op_params.get(ENABLE_ACTUATOR_DELAY_BPS_MULTI):
+#      delay = interp_multi_bp(eval_breakpoint_source(op_params.get(STEER_DELAY_MULTI_BP_SOURCE), CS, controls_state),
+#                              op_params.get(STEER_ACTUATOR_DELAY_BP_MULTI),
+#                              op_params.get(STEER_ACTUATOR_DELAY_V_MULTI))
+#    elif op_params.get(ENABLE_ACTUATOR_DELAY_BPS):
+#      delay = interp(v_ego, op_params.get(STEER_ACTUATOR_DELAY_BP), op_params.get(STEER_ACTUATOR_DELAY_V))
+#    else:
+    delay = op_params.get(STEER_ACTUATOR_DELAY)
   else:
     delay = CP.steerActuatorDelay
   delay += .2
