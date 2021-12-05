@@ -388,7 +388,8 @@ struct CarParams {
   enableApgs @6 :Bool;       # advanced parking guidance system
   enableBsm @56 :Bool;       # blind spot monitoring
   hasStockCamera @57 :Bool;  # factory LKAS/LDW camera is present
-
+  
+  enableTorqueInterceptor @58 :Bool; #enable torque interceptor
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
   maxSteeringAngleDeg @54 :Float32;
@@ -459,7 +460,10 @@ struct CarParams {
     kpV @1 :List(Float32);
     kiBP @2 :List(Float32);
     kiV @3 :List(Float32);
-    kf @4 :Float32;
+    kdBP @4 :List(Float32);
+    kdV @5 :List(Float32);
+    kf @6 :Float32;
+    newKfTuned @7 :Bool;
   }
 
   struct LongitudinalPIDTuning {

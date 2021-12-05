@@ -3,6 +3,12 @@ from common.numpy_fast import clip, interp
 from common.realtime import DT_MDL
 from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
+from common.op_params import ENABLE_LAT_PARAMS, ENABLE_ACTUATOR_DELAY_BPS, STEER_ACTUATOR_DELAY, \
+                            STEER_ACTUATOR_DELAY_BP, STEER_ACTUATOR_DELAY_V, \
+                            ENABLE_ACTUATOR_DELAY_BPS_MULTI, \
+                            STEER_ACTUATOR_DELAY_BP_MULTI, STEER_ACTUATOR_DELAY_V_MULTI, STEER_DELAY_MULTI_BP_SOURCE, \
+                            eval_breakpoint_source, interp_multi_bp, \
+                            ENABLE_CURVE_RATE_LIMITS, MAX_CURVE_RATE_BP, MAX_CURVE_RATE_V
 
 
 # kph
@@ -70,15 +76,36 @@ def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
 
   return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
 
-
-def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
+#def offset_v_cruise(v_cruise, last_cruise, offset):
+#  if v_cruise != last_cruise:
+#    return int(round(clip(v_cruise - offset, V_CRUISE_MIN, V_CRUISE_MAX)))
+#
+#  return v_cruise
+#
+#def is_toyota(CP):
+#  return CP.carName == "toyota"
+#
+def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, op_params, CS, controls_state):
   if len(psis) != CONTROL_N:
     psis = [0.0 for i in range(CONTROL_N)]
     curvatures = [0.0 for i in range(CONTROL_N)]
     curvature_rates = [0.0 for i in range(CONTROL_N)]
 
+  enable_lat_params = op_params.get(ENABLE_LAT_PARAMS)
+
   # TODO this needs more thought, use .2s extra for now to estimate other delays
-  delay = CP.steerActuatorDelay + .2
+  if enable_lat_params:
+    if op_params.get(ENABLE_ACTUATOR_DELAY_BPS_MULTI):
+      delay = interp_multi_bp(eval_breakpoint_source(op_params.get(STEER_DELAY_MULTI_BP_SOURCE), CS, controls_state),
+                              op_params.get(STEER_ACTUATOR_DELAY_BP_MULTI),
+                              op_params.get(STEER_ACTUATOR_DELAY_V_MULTI))
+    elif op_params.get(ENABLE_ACTUATOR_DELAY_BPS):
+      delay = interp(v_ego, op_params.get(STEER_ACTUATOR_DELAY_BP), op_params.get(STEER_ACTUATOR_DELAY_V))
+    else:
+      delay = op_params.get(STEER_ACTUATOR_DELAY)
+  else:
+    delay = CP.steerActuatorDelay
+  delay += .2
   current_curvature = curvatures[0]
   psi = interp(delay, T_IDXS[:CONTROL_N], psis)
   desired_curvature_rate = curvature_rates[0]
@@ -88,6 +115,13 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
   # psi to calculate a simple linearization of desired curvature
   curvature_diff_from_psi = psi / (max(v_ego, 1e-1) * delay) - current_curvature
   desired_curvature = current_curvature + 2 * curvature_diff_from_psi
+
+#  if enable_lat_params and op_params.get(ENABLE_CURVE_RATE_LIMITS):
+#    curve_rate_speeds = op_params.get(MAX_CURVE_RATE_BP)
+#    curve_rates = op_params.get(MAX_CURVE_RATE_V)
+#  else:
+#    curve_rate_speeds = MAX_CURVATURE_RATE_SPEEDS
+#    curve_rates = MAX_CURVATURE_RATES
 
   max_curvature_rate = interp(v_ego, MAX_CURVATURE_RATE_SPEEDS, MAX_CURVATURE_RATES)
   safe_desired_curvature_rate = clip(desired_curvature_rate,

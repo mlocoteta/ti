@@ -10,8 +10,9 @@ from selfdrive.controls.lib.events import ET
 from selfdrive.car.honda.hondacan import disable_radar
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CruiseSetting, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.car.interfaces import CarInterfaceBase
-
+from selfdrive.car.interfaces import CarInterfaceBase, ACCEL_MAX, ACCEL_MIN
+#from selfdrive.config import Conversions as CV
+from selfdrive import global_ti as TI
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -89,6 +90,10 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
+
+    print("in get_params, entering get_std_params")
+    if ret.enableTorqueInterceptor:
+      print("Recieving torque interceptor signal.")
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness
@@ -192,8 +197,9 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.66 # 13.37 is spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
-      ret.lateralTuning.pid.kf = 0.000025
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 18], [0., 18], [0., 18]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV, ret.lateralTuning.pid.kdV = [[0.08, 0.24], [0.01, 0.0125], [0.01, 0.1]]
+      ret.lateralTuning.pid.kf = 0.00001
       tire_stiffness_factor = 0.8467
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5] 
@@ -444,7 +450,7 @@ class CarInterface(CarInterfaceBase):
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.5
+    ret.steerRateCost = .5
     ret.steerLimitTimer = 0.8
 
     return ret
@@ -459,6 +465,10 @@ class CarInterface(CarInterfaceBase):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
+    if self.CP.enableTorqueInterceptor and not TI.enabled:
+      TI.enabled = True
+      self.cp = self.CS.get_can_parser(self.CP)
+      
     if self.cp_body:
       self.cp_body.update_strings(can_strings)
 
