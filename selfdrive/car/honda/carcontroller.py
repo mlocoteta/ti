@@ -159,7 +159,10 @@ class CarController():
                                                   CS.out.steeringTorque, P)
       apply_steer_ti = wiggle(apply_steer_ti, self.apply_steer_last_ti)
       self.apply_steer_last_ti = apply_steer_ti
-
+      if apply_steer_ti > 0:
+        apply_steer_ti = apply_steer_ti + P.TI_JUMPING_POINT
+      else:
+        apply_steer_ti = apply_steer_ti - P.TI_JUMPING_POINT
     
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(interp(actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
