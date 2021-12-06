@@ -10,7 +10,7 @@ from selfdrive.controls.lib.events import ET
 from selfdrive.car.honda.hondacan import disable_radar
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CruiseSetting, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.car.interfaces import CarInterfaceBase, ACCEL_MAX, ACCEL_MIN
+from selfdrive.car.interfaces import CarInterfaceBase
 #from selfdrive.config import Conversions as CV
 from selfdrive import global_ti as TI
 
