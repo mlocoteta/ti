@@ -16,7 +16,7 @@ class LongitudinalMpc():
     self.ts = list(range(10))
     self.status = True
     self.min_a = -3.2
-    self.max_a = 3.2 if Params().get_bool('CommaPedalEnhancements') else 0.4
+    self.max_a = 3.2
 
 
   def reset_mpc(self):
