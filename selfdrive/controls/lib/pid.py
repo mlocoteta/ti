@@ -1,4 +1,5 @@
 import numpy as np
+import types
 from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
 from common.op_params import opParams
