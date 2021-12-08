@@ -392,8 +392,10 @@ struct CarParams {
   enableGasInterceptor @2 :Bool;
   pcmCruise @3 :Bool;        # is openpilot's state tied to the PCM's cruise state?
   enableDsu @5 :Bool;        # driving support unit
-  enableApgs @6 :Bool;       # advanced parking guidance system
+    enableApgs @6 :Bool;       # advanced parking guidance system
   enableBsm @56 :Bool;       # blind spot monitoring
+  #enable torque interceptor
+  enableTorqueInterceptor @63 :Bool;
 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;

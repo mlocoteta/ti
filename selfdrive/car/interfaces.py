@@ -101,6 +101,7 @@ class CarInterfaceBase():
     ret.longitudinalTuning.kiV = [1.]
     ret.longitudinalActuatorDelayLowerBound = 0.15
     ret.longitudinalActuatorDelayUpperBound = 0.15
+    ret.enableTorqueInterceptor = False
     return ret
 
   # returns a car.CarState, pass in car.CarControl

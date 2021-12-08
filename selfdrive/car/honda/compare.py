@@ -5,41 +5,21 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
 from selfdrive.car import create_gas_command, apply_std_steer_torque_limits, apply_serial_steering_torque_mod, apply_ti_steer_torque_limits, wiggle
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams,SERIAL_STEERING
+from selfdrive.car.honda.values import OLD_NIDEC_LONG_CONTROL, CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, CarControllerParams, SERIAL_STEERING
 from opendbc.can.packer import CANPacker
-
+from selfdrive.car import apply_std_steer_torque_limits, apply_serial_steering_torque_mod
+from common.params import Params
+from common.op_params import opParams, SHOW_RATE_PARAMS, ENABLE_RATE_PARAMS, STOCK_STEER_MAX, TI_HIGH_BP, TI_STEER_MAX, TI_STEER_DELTA_UP, TI_STEER_DELTA_UP_LOW, TI_STEER_DELTA_DOWN, TI_STEER_DELTA_DOWN_LOW, STOCK_DELTA_UP, STOCK_DELTA_DOWN, STOCK_STEER_MAX, TI_JUMPING_POINT
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-LongCtrlState = car.CarControl.Actuators.LongControlState
-
-def compute_gb_honda_bosch(accel, speed):
-  #TODO returns 0s, is unused
-  return 0.0, 0.0
-
-
-def compute_gb_honda_nidec(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  gb = float(accel) / 4.8 - creep_brake
-  return clip(gb, 0.0, 1.0), clip(-gb, 0.0, 1.0)
-
-
-def compute_gas_brake(accel, speed, fingerprint):
-  if fingerprint in HONDA_BOSCH:
-    return compute_gb_honda_bosch(accel, speed)
-  else:
-    return compute_gb_honda_nidec(accel, speed)
 
 
 #TODO not clear this does anything useful
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005   # to deactivate brakes below this value
-  brake_hyst_gap = 0.01    # don't change brake command for small oscillations within this value
+  brake_hyst_off = 0.005                     # to deactivate brakes below this value
+  brake_hyst_gap = 0.01                      # don't change brake command for small oscillations within this value
 
   #*** hysteresis logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
@@ -54,6 +34,9 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   elif brake < brake_steady - brake_hyst_gap:
     brake_steady = brake + brake_hyst_gap
   brake = brake_steady
+
+  if (car_fingerprint in (CAR.ACURA_ILX, CAR.CRV, CAR.CRV_EU)) and brake > 0.0:
+    brake += 0.15
 
   return brake, braking, brake_steady
 
@@ -93,45 +76,64 @@ def process_hud_alert(hud_alert):
 
 
 HUDData = namedtuple("HUDData",
-                     ["pcm_accel", "v_cruise", "car",
-                     "lanes", "fcw", "acc_alert", "steer_required", "dashed_lanes"])
+                     ["pcm_accel", "v_cruise",  "car",
+                     "lanes", "fcw", "acc_alert", "steer_required", "dashed_lanes", "dist_lines"])
 
 
 class CarController():
-  def __init__(self, dbc_name, CP, VM):
+  def __init__(self, dbc_name, CP, VM, OP=None):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
     self.signal_last = 0.
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
-    #self.last_pump_on_state = False
     self.apply_steer_last = 0
     self.apply_steer_last_ti = 0
     self.apply_steer_warning_counter = 0
     self.apply_steer_cooldown_counter = 0
     self.steer_torque_boost_min = 70
     self.packer = CANPacker(dbc_name)
-
+    if not OP:
+      OP = opParams()
+    self.op_params = OP
     self.params = CarControllerParams(CP)
 
-  def update(self, enabled, active, CS, frame, actuators, pcm_cancel_cmd,
+  def update(self, enabled, CS, frame, actuators,
+             pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
+ 
+    if (self.op_params.get(ENABLE_RATE_PARAMS)):
+      P.STEER_DELTA_UP = self.op_params.get(STOCK_DELTA_UP)
+      P.STEER_DELTA_DOWN = self.op_params.get(STOCK_DELTA_DOWN)
+      P.STEER_MAX = self.op_params.get(STOCK_STEER_MAX)
+      P.TI_STEER_MAX = self.op_params.get(TI_STEER_MAX)                # theoretical max_steer 2047
+      P.TI_STEER_DELTA_UP = self.op_params.get(TI_STEER_DELTA_UP)             # torque increase per refresh
+      P.TI_STEER_DELTA_UP_LOW = self.op_params.get(TI_STEER_DELTA_UP_LOW) # torque increase per refresh
+      P.TI_STEER_DELTA_DOWN = self.op_params.get(TI_STEER_DELTA_DOWN)           # torque decrease per refresh
+      P.TI_STEER_DELTA_DOWN_LOW = self.op_params.get(TI_STEER_DELTA_DOWN_LOW) 
+      P.TI_HIGH_BP = self.op_params.get(TI_HIGH_BP)
+      P.TI_JUMPING_POINT = self.op_params.get(TI_JUMPING_POINT)
+      if P.TI_JUMPING_POINT > 0:
+        P.TI_STEER_MAX = (self.op_params.get(TI_STEER_MAX) - P.TI_JUMPING_POINT)
 
-    if enabled:
-      accel = actuators.accel
-      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
-    else:
-      accel = 0.0
-      gas, brake = 0.0, 0.0
 
     # *** apply brake hysteresis ***
-    pre_limit_brake, self.braking, self.brake_steady = actuator_hystereses(brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
+    brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
+
+    # *** no output if not enabled ***
+    if not enabled and CS.out.cruiseState.enabled:
+      # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
+      pcm_cancel_cmd = True
+
+    # Never send cancel command if we never enter cruise state (no cruise if pedal)
+    # Cancel cmd causes brakes to release at a standstill causing grinding
+    pcm_cancel_cmd = pcm_cancel_cmd and CS.CP.pcmCruise
 
     # *** rate limit after the enable check ***
-    self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
+    self.brake_last = rate_limit(brake, self.brake_last, -2., DT_CTRL)
 
     if enabled and CS.out.cruiseState.enabled:
       if hud_show_car:
@@ -201,37 +203,34 @@ class CarController():
       apply_steer_ti = 0
       can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint, apply_steer_ti))
 
-    stopping = actuators.longControlState == LongCtrlState.stopping
-    starting = actuators.longControlState == LongCtrlState.starting
+    accel = actuators.gas - actuators.brake
+
+    # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
+    stopping = accel < 0 and CS.out.vEgo < 0.3
+    starting = accel > 0 and CS.out.vEgo < 0.3
+
+    # Prevent rolling backwards
+    accel = -1.0 if stopping else accel
+    if CS.CP.carFingerprint in HONDA_BOSCH:
+      apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
+    else:
+      apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
     # wind brake from air resistance decel at high speed
-    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
-    # all of this is only relevant for HONDA NIDEC
-    max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
-    # TODO this 1.44 is just to maintain previous behavior
-    pcm_speed_BP = [-wind_brake,
-                    -wind_brake*(3/4),
-                      0.0,
-                      0.5]
-    # The Honda ODYSSEY seems to have different PCM_ACCEL
-    # msgs, is it other cars too?
-    if CS.CP.enableGasInterceptor:
-      pcm_speed = 0.0
-      pcm_accel = int(0.0)
-    elif CS.CP.carFingerprint in HONDA_NIDEC_ALT_PCM_ACCEL:
-      pcm_speed_V = [0.0,
-                     clip(CS.out.vEgo - 3.0, 0.0, 100.0),
-                     clip(CS.out.vEgo + 0.0, 0.0, 100.0),
-                     clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
-      pcm_speed = interp(gas-brake, pcm_speed_BP, pcm_speed_V)
-      pcm_accel = int((1.0) * 0xc6)
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.0, 0.0, 0.15])
+    if CS.CP.enableGasInterceptor or CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
+      #pcm_speed = pcm_speed
+      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
     else:
+      max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
+      pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
+      pcm_speed_BP = [-wind_brake,
+                      -wind_brake*(3/4),
+                      0.0]
       pcm_speed_V = [0.0,
-                     clip(CS.out.vEgo - 2.0, 0.0, 100.0),
-                     clip(CS.out.vEgo + 2.0, 0.0, 100.0),
-                     clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
-      pcm_speed = interp(gas-brake, pcm_speed_BP, pcm_speed_V)
-      pcm_accel = int(clip((accel/1.44)/max_accel, 0.0, 1.0) * 0xc6)
+                     clip(CS.out.vEgo + apply_accel/2.0 - 2.0, 0.0, 100.0),
+                     clip(CS.out.vEgo + apply_accel/2.0 + 2.0, 0.0, 100.0)]
+      pcm_speed = interp(accel, pcm_speed_BP, pcm_speed_V)
 
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
@@ -250,21 +249,16 @@ class CarController():
         ts = frame * DT_CTRL
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
-          accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
-          bosch_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
-          if not CS.out.cruiseState.enabled:
-            bosch_gas = 0.
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, bosch_gas, idx, stopping, starting, CS.CP.carFingerprint))
+          if CS.out.cruiseState.enabled:
+            apply_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
+            can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
 
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
-          apply_brake = int(clip(apply_brake * P.NIDEC_BRAKE_MAX, 0, P.NIDEC_BRAKE_MAX - 1))
+          apply_brake = int(clip(apply_brake * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
           if not CS.out.cruiseState.enabled and not (CS.CP.pcmCruise and CS.accEnabled and CS.CP.minEnableSpeed > 0 and not CS.out.cruiseState.enabled):
             apply_brake = 0.
-            bosch_gas = 0.
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
-
-          pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
             pcm_override, pcm_cancel_cmd, fcw_display, idx, CS.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
@@ -274,16 +268,13 @@ class CarController():
             gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
-            # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
-            # when you do enable.
-            if active and CS.out.cruiseState.enabled:
-              apply_gas = clip(gas_mult * (gas - brake + wind_brake*3/4), 0., 1.)
-            else:
-              apply_gas = 0.0
+            apply_gas = clip(gas_mult * actuators.gas, 0., 1.)
+            if not CS.out.cruiseState.enabled:
+              apply_gas = 0.
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
     hud = HUDData(int(pcm_accel), (int(round(hud_v_cruise)) if hud_car != 0 else 255), hud_car,
-                  hud_show_lanes and lkas_active, fcw_display, acc_alert, steer_required, CS.lkasEnabled and not lkas_active)
+                  hud_show_lanes and lkas_active, fcw_display, acc_alert, steer_required, CS.lkasEnabled and not lkas_active, CS.read_distance_lines)
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:

@@ -6,7 +6,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, SERIAL_STEERING
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, SERIAL_STEERING, LKAS_LIMITS, TI_STATE
 
 TransmissionType = car.CarParams.TransmissionType
 
@@ -52,7 +52,20 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("VSA_STATUS", 50),
     ("STEER_MOTOR_TORQUE", 0), # TODO: not on every car
   ]
-
+    # get real driver torque if we are using a torque interceptor
+  if CP.enableTorqueInterceptor:
+    signals += [
+        ("TI_TORQUE_SENSOR", "TI_FEEDBACK", 0),
+        ("CHKSUM", "TI_FEEDBACK", 0),
+        ("VERSION_NUMBER", "TI_FEEDBACK", 0),
+        ("STATE", "TI_FEEDBACK", 0),
+        ("VIOL", "TI_FEEDBACK", 0),
+        ("ERROR", "TI_FEEDBACK", 0),
+        ("RAMP_DOWN", "TI_FEEDBACK", 0),
+    ]
+    checks += [
+        ("TI_FEEDBACK", 14),
+    ]
   if CP.carFingerprint in SERIAL_STEERING:
     checks += [
       ("STEER_STATUS", 0), #SerialSteering doesn't have this - only on cp_cam
@@ -200,6 +213,11 @@ class CarState(CarStateBase):
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
     
+    self.ti_ramp_down = False
+    self.ti_version = 1
+    self.ti_state = TI_STATE.RUN
+    self.ti_violation = 0
+    self.ti_error = 0
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
@@ -285,9 +303,9 @@ class CarState(CarStateBase):
     # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
       user_gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      ret.gasPressed = user_gas > 1e-5  # this works because interceptor reads < 0 when pedal position is 0. Once calibrated, this will change
+      ret.gasPressed = self.user_gas_pressed or (self.ti_ramp_down) or (self.ti_state != 3)
     else:
-      ret.gasPressed = ret.gas > 1e-5
+      ret.gasPressed = self.pedal_gas > 1e-5 or (self.ti_ramp_down) or (self.ti_state != 3)
 
     if self.CP.carFingerprint in SERIAL_STEERING:
       ret.steeringTorque = cp_cam.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
@@ -296,6 +314,18 @@ class CarState(CarStateBase):
       ret.steeringTorque = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
       ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]['MOTOR_TORQUE']   
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
+
+    if self.CP.enableTorqueInterceptor:
+      ret.steeringTorque = cp.vl["TI_FEEDBACK"]["TI_TORQUE_SENSOR"]
+      self.ti_version = cp.vl["TI_FEEDBACK"]["VERSION_NUMBER"]
+      self.ti_state = cp.vl["TI_FEEDBACK"]["STATE"] # DISCOVER = 0, OFF = 1, DRIVER_OVER = 2, RUN=3
+      self.ti_violation = cp.vl["TI_FEEDBACK"]["VIOL"] # 0 = no violation
+      self.ti_error = cp.vl["TI_FEEDBACK"]["ERROR"] # 0 = no error
+      if self.ti_version > 1:
+        self.ti_ramp_down = (cp.vl["TI_FEEDBACK"]["RAMP_DOWN"] == 1)
+      ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.TI_STEER_THRESHOLD
+    else:
+      ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       if not self.CP.openpilotLongitudinalControl:
@@ -371,6 +401,7 @@ class CarState(CarStateBase):
     if self.lkasEnabled:
       if self.CP.carFingerprint in SERIAL_STEERING:
         steer_status = self.steer_status_values[cp_cam.vl["STEER_STATUS"]['STEER_STATUS']]
+        steer_status = "NORMAL"
       else:
         steer_status = self.steer_status_values[cp.vl["STEER_STATUS"]["STEER_STATUS"]]
       ret.steerError = steer_status not in ["NORMAL", "NO_TORQUE_ALERT_1", "NO_TORQUE_ALERT_2", "LOW_SPEED_LOCKOUT", "TMP_FAULT"]
