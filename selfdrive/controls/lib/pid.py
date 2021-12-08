@@ -174,6 +174,7 @@ class PIDController:
   def reset(self):
     self.p = 0.0
     self.i = 0.0
+    self.d = 0.0
     self.f = 0.0
     self.sat_count = 0.0
     self.saturated = False
@@ -193,7 +194,7 @@ class PIDController:
     if len(self.errors) >= self._d_period:  # makes sure we have enough history for period
       d = (error - self.errors[-self._d_period]) / self._d_period  # get deriv in terms of 100hz (tune scale doesn't change)
       d *= self.k_d
-
+    self.d = d
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
