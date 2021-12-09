@@ -154,17 +154,17 @@ class CarController():
     apply_steer = int(interp(actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
 
     if (CS.CP.carFingerprint in SERIAL_STEERING): # Dynamic torque boost if above threshold, smooth torque blend otherwise
-      if (apply_steer >= self.steer_torque_boost_min) or (apply_steer <= -self.steer_torque_boost_min):
-        apply_steer = apply_serial_steering_torque_mod(apply_steer, self.steer_torque_boost_min, self.apply_steer_warning_counter, self.apply_steer_cooldown_counter)
-      else:
-        apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
-        self.apply_steer_warning_counter = 0
-        self.apply_steer_cooldown_counter = 0
+#      if (apply_steer >= self.steer_torque_boost_min) or (apply_steer <= -self.steer_torque_boost_min):
+#        apply_steer = apply_serial_steering_torque_mod(apply_steer, self.steer_torque_boost_min, self.apply_steer_warning_counter, self.apply_steer_cooldown_counter)
+#      else:
+      apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+#        self.apply_steer_warning_counter = 0
+#        self.apply_steer_cooldown_counter = 0
       self.apply_steer_last = apply_steer
 
     # Add low steering torque cap for low speeds, manual turning, & manual interventions
-    if (CS.steer_torque_limited and (apply_steer > 60 or apply_steer < -60)):
-      apply_steer = 60 if apply_steer > 0 else -60
+#    if (CS.steer_torque_limited and (apply_steer > 60 or apply_steer < -60)):
+#      apply_steer = 60 if apply_steer > 0 else -60
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = -apply_steer
