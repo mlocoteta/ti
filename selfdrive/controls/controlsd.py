@@ -303,7 +303,7 @@ class Controls:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
     
-    if self.sm['pandaState'].torqueInterceptorDetected and not self.ti_ready:
+    if pandaState.torqueInterceptorDetected and not self.ti_ready:
       self.ti_ready = True
       print("TI is found")
       self.CP.enableTorqueInterceptor = True

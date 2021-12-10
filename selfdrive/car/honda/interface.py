@@ -237,7 +237,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.66 # 13.37 is spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.26], [0.07]]      
       ret.lateralTuning.pid.kf = 0.000025
       tire_stiffness_factor = 0.8467
 
@@ -515,8 +515,8 @@ class CarInterface(CarInterfaceBase):
       else:
         events.add(EventName.buttonEnable)
 
-    if not self.CS.acc_active_last and not self.CS.ti_lkas_allowed:
-      events.add(EventName.steerTempUnavailable)
+#    if not self.CS.acc_active_last and not self.CS.ti_lkas_allowed:
+#      events.add(EventName.steerTempUnavailable)
 
     ret.events = events.to_msg()
 

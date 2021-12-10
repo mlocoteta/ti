@@ -325,7 +325,7 @@ static int honda_tx_hook(CANPacket_t *to_send) {
       }
     }
   }
-
+/*
   if(torque_interceptor_detected == 1 && controls_allowed) {
     if (addr == 0xE4 ) {
       int desired_torque = (((GET_BYTE(to_send, 0)) << 8) | GET_BYTE(to_send, 1)) - HONDA_MAX_STEER;
@@ -373,7 +373,7 @@ static int honda_tx_hook(CANPacket_t *to_send) {
       }
     }
   }
-
+*/
     // Bosch supplemental control check
   if (addr == 0xE5) {
     if ((GET_BYTES_04(to_send) != 0x10800004) || ((GET_BYTES_48(to_send) & 0x00FFFFFF) != 0x0)) {
