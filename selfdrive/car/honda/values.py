@@ -38,10 +38,10 @@ class CarControllerParams():
     self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
     self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
     self.TI_STEER_MAX = 600                # theoretical max_steer 2047
-    self.TI_STEER_DELTA_UP = 4             # torque increase per refresh
-    self.TI_STEER_DELTA_DOWN = 5           # torque decrease per refresh
-    self.TI_STEER_DELTA_UP_LOW = 4             # torque increase per refresh
-    self.TI_STEER_DELTA_DOWN_LOW = 5
+    self.TI_STEER_DELTA_UP = 3             # torque increase per refresh
+    self.TI_STEER_DELTA_DOWN = 4           # torque decrease per refresh
+    self.TI_STEER_DELTA_UP_LOW = 3             # torque increase per refresh
+    self.TI_STEER_DELTA_DOWN_LOW = 4
     self.TI_HIGH_BP = 150    
     self.TI_STEER_DRIVER_ALLOWANCE = 5    # allowed driver torque before start limiting
     self.TI_STEER_DRIVER_MULTIPLIER = 40     # weight driver torque

@@ -69,7 +69,7 @@ class CarInterface(CarInterfaceBase):
     # Tire stiffness factor fictitiously lower if it includes the steering column torsion effect.
     # For modeling details, see p.198-200 in "The Science of Vehicle Dynamics (2014), M. Guiggiani"
     ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0], [0]]
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[5,10,35], [5.,10,35]]
     ret.lateralTuning.pid.kf = 0.00006  # conservative feed-forward
 
     if candidate in HONDA_BOSCH:
@@ -237,8 +237,8 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.66 # 13.37 is spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.26], [0.07]]      
-      ret.lateralTuning.pid.kf = 0.000025
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.04,0.2,0.4], [0.0133,.0677, 0.1]]      
+      ret.lateralTuning.pid.kf = 0.000020
       tire_stiffness_factor = 0.8467
 
     elif candidate == CAR.ODYSSEY:
