@@ -18,10 +18,15 @@ class PIController():
     if OP is None:
       OP = opParams()
     self.op_params = OP
-    self.pidList = [k_p,k_i,k_ff]
-    self._k_p = (self.op_params.get(k_p[0]), self.op_params.get(k_p[1]))  # proportional gain
-    self._k_i = (self.op_params.get(k_i[0]), self.op_params.get(k_i[1]))
-    self.k_f = self.op_params.get(k_ff)
+    if isLateral:
+      self.pidList = [k_p,k_i,k_ff]
+      self._k_p = (self.op_params.get(k_p[0]), self.op_params.get(k_p[1]))  # proportional gain
+      self._k_i = (self.op_params.get(k_i[0]), self.op_params.get(k_i[1]))
+      self.k_f = self.op_params.get(k_ff)
+    else:
+      self._k_p = k_p
+      self._k_i = k_i
+      self.k_f = k_ff
     if isinstance(self._k_p, Number):
       self._k_p = [[0], [self._k_p]]
     if isinstance(self._k_i, Number):
