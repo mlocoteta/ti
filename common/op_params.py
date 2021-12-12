@@ -165,6 +165,19 @@ class opParams:
                         LAT_PID_KI_BP: Param([10., 15., 35], [list, float, int], live=True),
                         LAT_PID_KI_V: Param([0.016, 0.07, 0.07], [list, float, int], live=True),
                         LAT_PID_KF: Param(6e-6, VT.number, live=True),
+                        SHOW_RATE_PARAMS: Param(False, [bool], live=True),
+                        ENABLE_RATE_PARAMS: Param(False, [bool], live=True, depends_on=SHOW_RATE_PARAMS),
+                        TI_STEER_MAX: Param(600, VT.number, live=True, depends_on=SHOW_RATE_PARAMS),
+                        TI_STEER_DELTA_UP: Param(3, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        #TI_STEER_DELTA_UP_LOW: Param(6, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        TI_STEER_DELTA_DOWN: Param(3, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        #TI_STEER_DELTA_DOWN_LOW: Param(15, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        TI_HIGH_BP: Param(150, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        STOCK_DELTA_UP: Param(7, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        STOCK_DELTA_DOWN: Param(14, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        STOCK_STEER_MAX: Param(238, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        TI_JUMPING_POINT: Param(70, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        STEER_RATIO: Param(0, VT.number, live=True),
 }
 
     self._params_file = '/data/op_params.json'
@@ -311,3 +324,18 @@ LAT_PID_KP_V = 'lat_pid_kp_v'
 LAT_PID_KI_BP = 'lat_pid_ki_bp'
 LAT_PID_KI_V = 'lat_pid_ki_v'
 LAT_PID_KF = 'lat_pid_kf'
+
+SHOW_RATE_PARAMS = 'show_rate_params'
+ENABLE_RATE_PARAMS = 'enable_rate_params'
+TI_STEER_MAX = 'ti_steer_max'
+TI_STEER_DELTA_UP = 'ti_steer_delta_up'
+TI_STEER_DELTA_UP_LOW = 'ti_steer_delta_up_low'
+TI_STEER_DELTA_DOWN = 'ti_steer_delta_down'
+TI_STEER_DELTA_DOWN_LOW = 'ti_steer_delta_down_low'
+TI_HIGH_BP = 'ti_high_bp'
+STOCK_DELTA_UP = 'stock_delta_up'
+STOCK_DELTA_DOWN = 'stock_delta_down'
+STOCK_STEER_MAX = 'stock_steer_max'
+TI_JUMPING_POINT = 'ti_jumping_point'
+
+STEER_RATIO = 'steer ratio'
