@@ -315,8 +315,6 @@ class CarController():
           if dragonconf.dpAtl and dragonconf.dpAtlOpLong and not CS.out.cruiseActualEnabled:
             apply_brake = 0
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
-<<<<<<< HEAD
-=======
           # Do NOT send the cancel command if we are using the pedal. Sending cancel causes the car firmware to
           # turn the brake pump off, and we don't want that. Stock ACC does not send the cancel cmd when it is braking.
 
@@ -324,7 +322,6 @@ class CarController():
           pcm_cancel_cmd = False
 
           pcm_override = True
->>>>>>> f9181464f... Undo all pump fixes
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
             pcm_override, pcm_cancel_cmd, fcw_display, idx, CS.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
