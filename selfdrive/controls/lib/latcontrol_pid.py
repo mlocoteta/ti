@@ -16,7 +16,7 @@ class LatControlPID():
     ki = (LAT_PID_KI_BP, LAT_PID_KI_V)
     kf = LAT_PID_KF
     self.pid = PIController(kp,ki, kf, pos_limit=1.0, neg_limit=-1.0,
-                            sat_limit=CP.steerLimitTimer)
+                            sat_limit=CP.steerLimitTimer, isLateral=True)
 
   def reset(self):
     self.pid.reset()
