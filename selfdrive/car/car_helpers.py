@@ -234,3 +234,7 @@ def get_car(logcan, sendcan):
     put_nonblocking("dp_sr_custom", '9.99')
     put_nonblocking("dp_sr_stock", '9.99')
     return None, None
+def get_ti():
+  print("get_ti, entering get_params")
+  CarInterface = global_ti.saved_CarInterface
+#  car_params = CarInterface.get_params(global_ti.saved_candidate, global_ti.saved_finger)

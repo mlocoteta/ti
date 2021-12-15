@@ -6,7 +6,23 @@
 //      accel rising edge
 //      brake rising edge
 //      brake > 0mph
-const CanMsg HONDA_N_TX_MSGS[] = {{0xE4, 0, 5}, {0x194, 0, 4}, {0x1FA, 0, 8}, {0x200, 0, 6}, {0x30C, 0, 8}, {0x33D, 0, 5}, {0xE4, 2, 5}};
+
+#define TI_LKAS 0x249
+#define TI_STEER_TORQUE 0x24A
+
+// max delta torque allowed for real time checks
+#define TI_MAX_RT_DELTA 940
+// 250ms between real time checks
+#define TI_RT_INTERVAL 250000
+#define TI_MAX_RATE_UP 10
+#define TI_MAX_RATE_DOWN 25
+#define TI_DRIVER_TORQUE_ALLOWANCE 15
+#define TI_DRIVER_TORQUE_FACTOR 1
+#define TI_MAX_TORQUE_ERROR 350
+
+#define TI_MAX_STEER 4096
+
+const CanMsg HONDA_N_TX_MSGS[] = {{TI_LKAS,0,8}, {0xE4, 0, 5}, {0x194, 0, 4}, {0x1FA, 0, 8}, {0x200, 0, 6}, {0x30C, 0, 8}, {0x33D, 0, 5}, {0xE4, 2, 5}};
 const CanMsg HONDA_BH_TX_MSGS[] = {{0xE4, 0, 5}, {0xE5, 0, 8}, {0x296, 1, 4}, {0x33D, 0, 5}};  // Bosch Harness
 const CanMsg HONDA_BG_LONG_TX_MSGS[] = {{0xE4, 0, 5}, {0x1DF, 0, 8}, {0x1EF, 0, 8}, {0x1FA, 0, 8}, {0x30C, 0, 8}, {0x33D, 0, 5}, {0x39F, 0, 8}, {0x18DAB0F1, 0, 8}};  // Bosch Giraffe w/ gas and brakes
 const CanMsg HONDA_BH_LONG_TX_MSGS[] = {{0xE4, 1, 5}, {0x1DF, 1, 8}, {0x1EF, 1, 8}, {0x1FA, 1, 8}, {0x30C, 1, 8}, {0x33D, 1, 5}, {0x39F, 1, 8}, {0x18DAB0F1, 1, 8}};  // Bosch Harness w/ gas and brakes
