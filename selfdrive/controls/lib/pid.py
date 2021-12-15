@@ -32,6 +32,12 @@ class PIController():
 
     self.reset()
 
+  def _update_params(self):
+    self._k_p = (self.op_params.get(self.k_p[0]), self.op_params.get(self.k_p[1]))
+    self._k_i = (self.op_params.get(self.k_i[0]), self.op_params.get(self.k_i[1]))
+    self.k_f = self.op_params.get(self.k_f)
+        
+      
   @property
   def k_p(self):
     return interp(self.speed, self._k_p[0], self._k_p[1])
@@ -61,6 +67,7 @@ class PIController():
     self.control = 0
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+    self._update_params()
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
