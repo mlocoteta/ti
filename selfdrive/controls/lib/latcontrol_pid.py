@@ -7,7 +7,7 @@ from common.op_params import opParams, LAT_PID_KP_BP, LAT_PID_KP_V, LAT_PID_KI_B
 
 
 class LatControlPID():
-  def __init__(self, CP, CI, OP=None):
+  def __init__(self, CP, OP=None):
     if OP is None:
       OP = opParams()
     self.op_params = OP

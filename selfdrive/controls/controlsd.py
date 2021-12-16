@@ -302,7 +302,7 @@ class Controls:
       self.events.add(EventName.relayMalfunction)
     if self.sm['longitudinalPlan'].fcw or (self.enabled and self.sm['modelV2'].meta.hardBrakePredicted):
       self.events.add(EventName.fcw)
-    if pandaState.torqueInterceptorDetected and not self.ti_ready:
+    if self.sm['pandaState'].torqueInterceptorDetected and not self.ti_ready:
       self.ti_ready = True
       print("TI is found")
       self.CP.enableTorqueInterceptor = True
