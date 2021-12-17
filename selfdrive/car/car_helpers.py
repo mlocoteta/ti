@@ -12,8 +12,10 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 import selfdrive.crash as crash
+from selfdrive import global_ti
+from cereal import car, log
 
-from cereal import car
+DynamicParam = log.PandaState
 EventName = car.CarEvent.EventName
 
 
@@ -175,8 +177,10 @@ def fingerprint(logcan, sendcan):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
+    cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
                  source=source, fuzzy=not exact_match, fw_count=len(car_fw))
+    global_ti.saved_candidate = car_fingerprint
+    global_ti.saved_finger = finger
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 def is_connected_to_internet(timeout=5):

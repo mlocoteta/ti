@@ -108,6 +108,8 @@ bool main_on_prev = false;
 bool set_me_prev = false;
 float vehicle_speed = 0;
 bool vehicle_moving = false;
+bool acc_main_on = false;  // referred to as "ACC off" in ISO 15622:2018
+bool torque_interceptor_detected = false;
 
 // for safety modes with torque steering control
 int desired_torque_last = 0;       // last desired steer torque

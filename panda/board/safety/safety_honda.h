@@ -103,11 +103,22 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   bool valid = addr_safety_check(to_push, &honda_rx_checks,
                                  honda_get_checksum, honda_compute_checksum, honda_get_counter);
 
+  if (GET_ADDR(to_push) == TI_STEER_TORQUE){
+    if (GET_BYTE(to_push, 0) == GET_BYTE(to_push, 1)){
+      torque_interceptor_detected = 1;
+      valid = true;
+    }
+  }
+
   if (valid) {
     int addr = GET_ADDR(to_push);
     int len = GET_LEN(to_push);
     int bus = GET_BUS(to_push);
-
+    if ((addr == TI_STEER_TORQUE) && (torque_interceptor_detected)) {
+      int torque_driver_new = GET_BYTE(to_push, 0) - 126;
+      // update array of samples
+	    update_sample(&torque_driver, torque_driver_new);
+    }
     // sample speed
     if (addr == 0x158) {
       // first 2 bytes
@@ -296,7 +307,55 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       }
     }
   }
+/*
+  if(torque_interceptor_detected == 1 && controls_allowed) {
+    if (addr == 0xE4 ) {
+      int desired_torque = (((GET_BYTE(to_send, 0)) << 8) | GET_BYTE(to_send, 1)) - HONDA_MAX_STEER;
+      bool violation = 0;
+      uint32_t ts = microsecond_timer_get();
 
+      if (controls_allowed) {
+
+        // *** global torque limit check ***
+        violation |= max_limit_check(desired_torque, TI_MAX_STEER, -TI_MAX_STEER);
+
+        // *** torque rate limit check ***
+        violation |= driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
+                                        TI_MAX_STEER, TI_MAX_RATE_UP, TI_MAX_RATE_DOWN,
+                                        TI_DRIVER_TORQUE_ALLOWANCE, TI_DRIVER_TORQUE_FACTOR);
+
+        // used next time
+        desired_torque_last = desired_torque;
+
+        // *** torque real time rate limit check ***
+        violation |= rt_rate_limit_check(desired_torque, rt_torque_last, TI_MAX_RT_DELTA);
+
+        // every RT_INTERVAL set the new limits
+        uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
+        if (ts_elapsed > ((uint32_t) TI_RT_INTERVAL)) {
+          rt_torque_last = desired_torque;
+          ts_last = ts;
+        }
+      }
+
+      // no torque if controls is not allowed
+      if (!controls_allowed && (desired_torque != 0)) {
+        violation = 1;
+      }
+
+      // reset to 0 if either controls is not allowed or there's a violation
+      if (violation || !controls_allowed) {
+        desired_torque_last = 0;
+        rt_torque_last = 0;
+        ts_last = ts;
+      }
+
+      if (violation) {
+        tx = 0;
+      }
+    }
+  }
+*/
     // Bosch supplemental control check
   if (addr == 0xE5) {
     if ((GET_BYTES_04(to_send) != 0x10800004) || ((GET_BYTES_48(to_send) & 0x00FFFFFF) != 0x0)) {
@@ -345,6 +404,7 @@ static const addr_checks* honda_nidec_init(int16_t param) {
   honda_rx_checks = (addr_checks){honda_addr_checks, HONDA_ADDR_CHECKS_LEN};
   return &honda_rx_checks;
 }
+  torque_interceptor_detected = 0;
 
 static const addr_checks* honda_bosch_giraffe_init(int16_t param) {
   controls_allowed = false;

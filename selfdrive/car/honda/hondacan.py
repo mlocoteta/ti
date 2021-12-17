@@ -50,6 +50,19 @@ def disable_radar(logcan, sendcan, bus=1, timeout=0.1, debug=False):
     cloudlog.exception("radar disable exception")
   cloudlog.warning("radar disable failed")
 
+def create_ti_steering_control(packer, car_fingerprint, apply_steer):
+
+  key = 3294744160
+  chksum = apply_steer
+
+  if True:
+    values = {
+        "LKAS_REQUEST"     : apply_steer,
+        "CHKSUM"           : chksum,
+        "KEY"              : key
+     }
+
+  return packer.make_can_msg("CAM_LKAS2", 0, values)
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?

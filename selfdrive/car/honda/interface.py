@@ -12,6 +12,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.config import Conversions as CV
 from common.dp_common import common_interface_atl, common_interface_get_params_lqr
 
+from selfdrive import global_ti as TI
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -425,6 +426,11 @@ class CarInterface(CarInterfaceBase):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
+    
+    if self.CP.enableTorqueInterceptor and not TI.enabled:
+      TI.enabled = True
+      self.cp = self.CS.get_can_parser(self.CP)
+
     if self.cp_body:
       self.cp_body.update_strings(can_strings)
 
@@ -589,6 +595,9 @@ class CarInterface(CarInterfaceBase):
         events.add(EventName.silentButtonEnable)
       else:
         events.add(EventName.buttonEnable)
+
+    if not self.CS.acc_active_last and not self.CS.ti_lkas_allowed:
+      events.add(EventName.steerTempUnavailable)
 
     ret.events = events.to_msg()
 

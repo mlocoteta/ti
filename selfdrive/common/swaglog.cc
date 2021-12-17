@@ -29,17 +29,20 @@ class LogState {
 };
 
 LogState::~LogState() {
-  zmq_close(sock);
-  zmq_ctx_destroy(zctx);
+  //  zmq_close(sock);
+  //zmq_ctx_destroy(zctx);
 }
 
 static LogState s = {};
 
+/*
 static void cloudlog_bind_locked(const char* k, const char* v) {
-  s.ctx_j[k] = v;
+  //s.ctx_j[k] = v;
 }
 
+
 static void cloudlog_init() {
+
   if (s.inited) return;
   s.ctx_j = json11::Json::object {};
   s.zctx = zmq_ctx_new();
@@ -82,9 +85,11 @@ static void cloudlog_init() {
   }
 
   s.inited = true;
-}
 
+}
+*/
 void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
+  /*
   std::lock_guard lk(s.lock);
   cloudlog_init();
   if (levelnum >= s.print_level) {
@@ -92,10 +97,12 @@ void log(int levelnum, const char* filename, int lineno, const char* func, const
   }
   char levelnum_c = levelnum;
   zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
+  */
 }
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) {
+  /*
   char* msg_buf = nullptr;
   va_list args;
   va_start(args, fmt);
@@ -116,10 +123,13 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   std::string log_s = log_j.dump();
   log(levelnum, filename, lineno, func, msg_buf, log_s);
   free(msg_buf);
+  */
 }
 
 void cloudlog_bind(const char* k, const char* v) {
+  /*
   std::lock_guard lk(s.lock);
   cloudlog_init();
   cloudlog_bind_locked(k, v);
+  */
 }

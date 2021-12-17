@@ -398,6 +398,7 @@ struct PandaState @0xa7649e2575e4591e {
   heartbeatLost @22 :Bool;
   torqueInterceptorDetected @23 :Bool;
 
+  
   enum FaultStatus {
     none @0;
     faultTemp @1;
