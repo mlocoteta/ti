@@ -5,8 +5,8 @@ from cereal import log
 from common.filter_simple import FirstOrderFilter, Delay
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
-from selfdrive.car import apply_toyota_steer_torque_limits
-from selfdrive.car.toyota.values import CarControllerParams
+from selfdrive.car import apply_ti_steer_torque_limits
+from selfdrive.car.honda.values import CarControllerParams
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 DEFAULT_G = 0.15
@@ -36,7 +36,7 @@ class LatControlINDI():
     self.A_K = A - np.dot(K, C)
     self.x = np.array([[0.], [0.], [0.]])
 
-    self.enforce_rate_limit = CP.carName == "toyota"
+    self.enforce_rate_limit = True
 
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
@@ -123,13 +123,14 @@ class LatControlINDI():
       # If steering pressed, only allow wind down
       if CS.steeringPressed and (delta_u * self.output_steer > 0):
         delta_u = 0
-
+      self.params = CarControllerParams(CP)
+      P = self.params
       # Enforce rate limit
       if self.enforce_rate_limit:
         steer_max = float(CarControllerParams.STEER_MAX)
         new_output_steer_cmd = steer_max * (self.steer_filter.x + delta_u)
         prev_output_steer_cmd = steer_max * self.output_steer
-        new_output_steer_cmd = apply_toyota_steer_torque_limits(new_output_steer_cmd, prev_output_steer_cmd, prev_output_steer_cmd, CarControllerParams)
+        new_output_steer_cmd = apply_ti_steer_torque_limits(new_output_steer_cmd, prev_output_steer_cmd, prev_output_steer_cmd, self.params)
         self.output_steer = new_output_steer_cmd / steer_max
       else:
         self.output_steer = self.steer_filter.x + delta_u
