@@ -596,8 +596,8 @@ class CarInterface(CarInterfaceBase):
       else:
         events.add(EventName.buttonEnable)
 
-    if not self.CS.acc_active_last and not self.CS.ti_lkas_allowed:
-      events.add(EventName.steerTempUnavailable)
+#    if not self.CS.acc_active_last and not self.CS.ti_lkas_allowed:
+#      events.add(EventName.steerTempUnavailable)
 
     ret.events = events.to_msg()
 

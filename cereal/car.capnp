@@ -420,7 +420,7 @@ struct CarParams {
   enableBsm @56 :Bool;       # blind spot monitoring
   hasStockCamera @57 :Bool;  # factory LKAS/LDW camera is present
   #enable torque interceptor
-  enableTorqueInterceptor @63 :Bool;
+  enableTorqueInterceptor @59 :Bool;
 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;

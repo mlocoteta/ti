@@ -105,7 +105,7 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   if (GET_ADDR(to_push) == TI_STEER_TORQUE){
     if (GET_BYTE(to_push, 0) == GET_BYTE(to_push, 1)){
-      torque_interceptor_detected = 1;
+      torque_interceptor_detected = true;
       valid = true;
     }
   }
@@ -402,10 +402,10 @@ static const addr_checks* honda_nidec_init(int16_t param) {
   honda_bosch_long = false;
   honda_alt_lkas_button = GET_FLAG(param, HONDA_PARAM_ALT_LKAS_BUTTON);
   honda_rx_checks = (addr_checks){honda_addr_checks, HONDA_ADDR_CHECKS_LEN};
+  torque_interceptor_detected =0;
   return &honda_rx_checks;
 }
-  torque_interceptor_detected = 0;
-
+ 
 static const addr_checks* honda_bosch_giraffe_init(int16_t param) {
   controls_allowed = false;
   relay_malfunction_reset();

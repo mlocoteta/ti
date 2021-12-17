@@ -6,7 +6,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, SERIAL_STEERING, LKAS_LIMITS, TI_STATE
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH,  HONDA_BOSCH_ALT_BRAKE_SIGNAL, SERIAL_STEERING, LKAS_LIMITS, TI_STATE
 from common.params import Params
 
 TransmissionType = car.CarParams.TransmissionType
@@ -371,12 +371,9 @@ class CarState(CarStateBase):
     # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
       user_gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      ret.gasPressed = user_gas > 1e-5  # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
+      ret.gasPressed = user_gas > 1e-5 or (self.ti_ramp_down) or (self.ti_state != 3)
     else:
-      ret.gasPressed = pedal_gas > 1e-5
-      ret.gasPressed = self.user_gas_pressed or (self.ti_ramp_down) or (self.ti_state != 3)
-    else:
-      ret.gasPressed = self.pedal_gas > 1e-5 or (self.ti_ramp_down) or (self.ti_state != 3)
+      ret.gasPressed = ret.gas > 1e-5 or (self.ti_ramp_down) or (self.ti_state != 3)
 
     if self.CP.carFingerprint in SERIAL_STEERING:
       ret.steeringTorque = cp_cam.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
