@@ -44,6 +44,38 @@ def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor
 def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None):
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc, 'body': body_dbc}
 
+def wiggle(apply_steer,apply_steer_last):
+
+  if apply_steer == apply_steer_last:
+    apply_steer +=1
+
+  return int(round(apply_steer))
+#alternate settings when using torque interceptor. May or may not be useful to some users/branches.
+def apply_ti_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
+  # limits due to driver torque
+  driver_max_torque = LIMITS.TI_STEER_MAX + (LIMITS.TI_STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.TI_STEER_DRIVER_FACTOR) * LIMITS.TI_STEER_DRIVER_MULTIPLIER
+  driver_min_torque = -LIMITS.TI_STEER_MAX + (-LIMITS.TI_STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.TI_STEER_DRIVER_FACTOR) * LIMITS.TI_STEER_DRIVER_MULTIPLIER
+  max_steer_allowed = max(min(LIMITS.TI_STEER_MAX, driver_max_torque), 0)
+  min_steer_allowed = min(max(-LIMITS.TI_STEER_MAX, driver_min_torque), 0)
+  apply_torque = clip(apply_torque, min_steer_allowed, max_steer_allowed)
+
+  # slow rate if steer torque increases in magnitude
+  if apply_torque_last > 0:
+    if apply_torque > LIMITS.TI_HIGH_BP:
+      apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN_LOW, -LIMITS.TI_STEER_DELTA_UP_LOW),
+                          apply_torque_last + LIMITS.TI_STEER_DELTA_UP_LOW)
+    else: 
+      apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.TI_STEER_DELTA_DOWN, -LIMITS.TI_STEER_DELTA_UP),
+                          apply_torque_last + LIMITS.TI_STEER_DELTA_UP)
+  else:
+    if apply_torque < -(LIMITS.TI_HIGH_BP):
+      apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP_LOW,
+                        min(apply_torque_last + LIMITS.TI_STEER_DELTA_DOWN_LOW, LIMITS.TI_STEER_DELTA_UP_LOW))
+    else:
+      apply_torque = clip(apply_torque, apply_torque_last - LIMITS.TI_STEER_DELTA_UP,
+                        min(apply_torque_last + LIMITS.TI_STEER_DELTA_DOWN, LIMITS.TI_STEER_DELTA_UP))
+
+  return int(round(float(apply_torque)))
 
 def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
 
@@ -64,6 +96,42 @@ def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque
 
   return int(round(float(apply_torque)))
 
+def apply_serial_steering_torque_mod(apply_steer, torque_boost_min, steer_warning_counter, steer_cooldown_counter):
+  # Init Local Variables
+  TORQUE_OVERCLOCK = 238
+  TORQUE_STEERING_CAP = 238
+  TORQUE_WARNING_COUNTER = 4
+  TORQUE_COOLDOWN = 2
+  TORQUE_MULTIPLIER = 1
+
+  # Start with old steer copy
+  new_steer = apply_steer
+
+  # Apply correct formula based on postive/negative apply_steer
+  if new_steer > 0: 
+    TORQUE_MULTIPLIER = (1 + (0.1 - (((apply_steer-torque_boost_min)/(TORQUE_STEERING_CAP-torque_boost_min)) / 10)) + 0.04)
+    new_steer = min(int(round(new_steer * TORQUE_MULTIPLIER)), TORQUE_STEERING_CAP)
+  else:
+    TORQUE_MULTIPLIER = (1 + (0.1 - (((apply_steer+torque_boost_min)/(-TORQUE_STEERING_CAP+torque_boost_min)) / 10)) + 0.04)
+    new_steer = max(int(round(new_steer * TORQUE_MULTIPLIER)), -TORQUE_STEERING_CAP)
+  # Reset the steering torque when the warning counter is too high
+  if (new_steer > TORQUE_OVERCLOCK) or (new_steer < -TORQUE_OVERCLOCK):
+    steer_warning_counter += 1
+    if (steer_warning_counter >= TORQUE_WARNING_COUNTER):
+      # apply torque limits steering backup before EPS error & cooldown
+      new_steer = apply_steer
+      steer_cooldown_counter += 1
+      # reset the torque warning after cooldown is done 
+      if steer_cooldown_counter >= TORQUE_COOLDOWN:
+        steer_warning_counter = 0
+        steer_cooldown_counter = 0
+  else:
+    # Normal torque range (near warning)
+    steer_warning_counter = 0
+    steer_cooldown_counter = 0
+
+
+  return new_steer
 
 def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, motor_torque, LIMITS):
   # limits due to comparison of commanded torque VS motor reported torque

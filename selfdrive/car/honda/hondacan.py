@@ -1,4 +1,4 @@
-from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams
+from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams, SERIAL_STEERING
 from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
@@ -17,6 +17,21 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
     return get_pt_bus(car_fingerprint)
   # normally steering commands are sent to radar, which forwards them to powertrain bus
   return 0
+
+
+def create_ti_steering_control(packer, car_fingerprint, apply_steer):
+
+  key = 3294744160
+  chksum = apply_steer
+
+  if True:
+    values = {
+        "LKAS_REQUEST"     : apply_steer,
+        "CHKSUM"           : chksum,
+        "KEY"              : key
+     }
+
+  return packer.make_can_msg("CAM_LKAS2", 0, values)
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
@@ -83,7 +98,7 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
-  bus = get_lkas_cmd_bus(car_fingerprint, radar_disabled)
+  bus = 2 if car_fingerprint in SERIAL_STEERING else get_lkas_cmd_bus(car_fingerprint, radar_disabled)
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 

@@ -10,7 +10,7 @@ from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_ti
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 from selfdrive.config import Conversions as CV
-
+from selfdrive import global_ti as TI
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -238,6 +238,17 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       tire_stiffness_factor = 0.677
 
+    elif candidate in (CAR.ACCORD_NIDEC, CAR.ACCORD_NIDEC_HYBRID, CAR.V6ACCORD_NIDEC):
+      stop_and_go = False
+      ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.75
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 13.66 # 13.37 is spec
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.29], [0.07]]      
+      ret.lateralTuning.pid.kf = 0.000025
+      tire_stiffness_factor = 0.8467
+
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
       ret.mass = 4471. * CV.LB_TO_KG + STD_CARGO_KG
@@ -277,6 +288,18 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
+    
+    elif candidate == CAR.ACURA_MDX_HYBRID:
+      stop_and_go = False
+      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
+      ret.wheelbase = 2.82
+      ret.centerToFront = ret.wheelbase * 0.428
+      ret.steerRatio = 15.66  # as spec
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.444
+      ret.steerActuatorDelay = 0.3
+      ret.lateralTuning.pid.kf = 0.000040
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.135], [0.062]]
 
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
@@ -352,6 +375,11 @@ class CarInterface(CarInterfaceBase):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
+    
+    if self.CP.enableTorqueInterceptor and not TI.enabled:
+      TI.enabled = True
+      self.cp = self.CS.get_can_parser(self.CP)
+
     if self.cp_body:
       self.cp_body.update_strings(can_strings)
 
@@ -494,6 +522,9 @@ class CarInterface(CarInterfaceBase):
         events.add(EventName.silentButtonEnable)
       else:
         events.add(EventName.buttonEnable)
+
+    if not self.CS.acc_active_last and not self.CS.ti_lkas_allowed:
+      events.add(EventName.steerTempUnavailable)
 
     ret.events = events.to_msg()
 
