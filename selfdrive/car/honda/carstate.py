@@ -304,10 +304,10 @@ class CarState(CarStateBase):
     # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
       user_gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      ret.gasPressed = self.user_gas_pressed or (self.ti_ramp_down) or (self.ti_state != 3)
+      ret.gasPressed = user_gas > 1e-5 or (self.ti_ramp_down) or (self.ti_state != 3)
     else:
-      ret.gasPressed = self.pedal_gas > 1e-5 or (self.ti_ramp_down) or (self.ti_state != 3)
-
+      ret.gasPressed = ret.gas > 1e-5 or (self.ti_ramp_down) or (self.ti_state != 3)
+      
     if self.CP.carFingerprint in SERIAL_STEERING:
       ret.steeringTorque = cp_cam.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
       ret.steeringTorqueEps = cp_cam.vl["STEER_MOTOR_TORQUE"]['MOTOR_TORQUE']
