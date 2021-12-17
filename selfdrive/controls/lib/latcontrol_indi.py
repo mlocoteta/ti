@@ -2,13 +2,16 @@ import math
 import numpy as np
 
 from cereal import log
-from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import clip, interp
+from common.filter_simple import FirstOrderFilter, Delay
+from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.toyota.values import CarControllerParams
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 
+DEFAULT_G = 0.15
+MAX_G = 1.0
+MIN_G = 0.025
 
 class LatControlINDI():
   def __init__(self, CP):
@@ -29,46 +32,32 @@ class LatControlINDI():
                   [7.29394177e+00, 1.39159419e-02],
                   [1.71022442e+01, 3.38495381e-02]])
 
-    self.speed = 0.
-
     self.K = K
     self.A_K = A - np.dot(K, C)
     self.x = np.array([[0.], [0.], [0.]])
 
     self.enforce_rate_limit = CP.carName == "toyota"
 
-    self._RC = (CP.lateralTuning.indi.timeConstantBP, CP.lateralTuning.indi.timeConstantV)
-    self._G = (CP.lateralTuning.indi.actuatorEffectivenessBP, CP.lateralTuning.indi.actuatorEffectivenessV)
-    self._outer_loop_gain = (CP.lateralTuning.indi.outerLoopGainBP, CP.lateralTuning.indi.outerLoopGainV)
-    self._inner_loop_gain = (CP.lateralTuning.indi.innerLoopGainBP, CP.lateralTuning.indi.innerLoopGainV)
-
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
-    self.steer_filter = FirstOrderFilter(0., self.RC, DT_CTRL)
+
+    # Actuator is modeled as a pure delay, followed by a first
+    # order filter. Both with a time constant of CP.steerActuatorDelay
+    self.steer_delay = Delay(0, CP.steerActuatorDelay, DT_CTRL)
+    self.steer_filter = FirstOrderFilter(0., CP.steerActuatorDelay, DT_CTRL)
+
+    self.steer_pressed_filter = FirstOrderFilter(0., 0.5, DT_CTRL)
+    self.mu = 0.01
+    self.G = DEFAULT_G
 
     self.reset()
 
-  @property
-  def RC(self):
-    return interp(self.speed, self._RC[0], self._RC[1])
-
-  @property
-  def G(self):
-    return interp(self.speed, self._G[0], self._G[1])
-
-  @property
-  def outer_loop_gain(self):
-    return interp(self.speed, self._outer_loop_gain[0], self._outer_loop_gain[1])
-
-  @property
-  def inner_loop_gain(self):
-    return interp(self.speed, self._inner_loop_gain[0], self._inner_loop_gain[1])
-
   def reset(self):
     self.steer_filter.x = 0.
+    self.steer_pressed_filter.x = 0.
     self.output_steer = 0.
     self.sat_count = 0.
-    self.speed = 0.
+    self.active_count = 0
 
   def _check_saturation(self, control, check_saturation, limit):
     saturated = abs(control) == limit
@@ -83,7 +72,6 @@ class LatControlINDI():
     return self.sat_count > self.sat_limit
 
   def update(self, active, CS, CP, VM, params, curvature, curvature_rate):
-    self.speed = CS.vEgo
     # Update Kalman filter
     y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
@@ -95,26 +83,42 @@ class LatControlINDI():
 
     steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo)
     steers_des += math.radians(params.angleOffsetDeg)
+    indi_log.steeringAngleDesiredDeg = math.degrees(steers_des)
+
+    rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo)
+    indi_log.steeringRateDesiredDeg = math.degrees(rate_des)
+
     if CS.vEgo < 0.3 or not active:
       indi_log.active = False
       self.output_steer = 0.0
       self.steer_filter.x = 0.0
+      self.steer_delay.reset(0)
+      self.steer_pressed_filter.x = 0.
+      self.active_count = 0
     else:
+      # Update actuator model with last steering output
+      steer_filter_prev_x = self.steer_filter.x
+      self.steer_filter.update(self.steer_delay.update(self.output_steer))
+      self.active_count += 1
 
-      rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo)
+      if CS.steeringPressed:
+        self.steer_pressed_filter.x = 1
+      else:
+        self.steer_pressed_filter.update(0)
 
-      # Expected actuator value
-      self.steer_filter.update_alpha(self.RC)
-      self.steer_filter.update(self.output_steer)
+      # Update effectiveness based on rate of change in control and angle
+      pressed = self.steer_pressed_filter.x > 0.5
+      engage_cooldown = self.active_count > 10 * self.steer_delay.n
+      saturated = abs(self.output_steer) > 0.9
+      if (not pressed) and engage_cooldown and (not saturated):
+        delta_u = (self.steer_filter.x - steer_filter_prev_x) / DT_CTRL
+        indi_log.accelSetPoint = float(delta_u)  # HACK
+        self.G = self.G - self.mu * (self.G * delta_u - self.x[1]) * delta_u
+        self.G = clip(self.G, MIN_G, MAX_G)
 
-      # Compute acceleration error
-      rate_sp = self.outer_loop_gain * (steers_des - self.x[0]) + rate_des
-      accel_sp = self.inner_loop_gain * (rate_sp - self.x[1])
-      accel_error = accel_sp - self.x[2]
-
-      # Compute change in actuator
-      g_inv = 1. / self.G
-      delta_u = g_inv * accel_error
+      # Compute desired change in actuator
+      angle_error = steers_des - self.x[0]
+      delta_u = angle_error / self.G
 
       # If steering pressed, only allow wind down
       if CS.steeringPressed and (delta_u * self.output_steer > 0):
@@ -132,16 +136,16 @@ class LatControlINDI():
 
       steers_max = get_steer_max(CP, CS.vEgo)
       self.output_steer = clip(self.output_steer, -steers_max, steers_max)
+      delta_u = self.output_steer - self.steer_filter.x
 
       indi_log.active = True
-      indi_log.rateSetPoint = float(rate_sp)
-      indi_log.accelSetPoint = float(accel_sp)
-      indi_log.accelError = float(accel_error)
       indi_log.delayedOutput = float(self.steer_filter.x)
       indi_log.delta = float(delta_u)
       indi_log.output = float(self.output_steer)
 
       check_saturation = (CS.vEgo > 10.) and not CS.steeringRateLimited and not CS.steeringPressed
       indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
+
+    indi_log.accelError = float(self.G)  # HACK
 
     return float(self.output_steer), float(steers_des), indi_log
