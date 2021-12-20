@@ -128,9 +128,9 @@ class CarController():
       P.STEER_MAX = self.op_params.get(STOCK_STEER_MAX)
       P.TI_STEER_MAX = self.op_params.get(TI_STEER_MAX)                # theoretical max_steer 2047
       P.TI_STEER_DELTA_UP = self.op_params.get(TI_STEER_DELTA_UP)             # torque increase per refresh
-      P.TI_STEER_DELTA_UP_LOW = self.op_params.get(TI_STEER_DELTA_UP) # torque increase per refresh
+      P.TI_STEER_DELTA_UP_LOW = self.op_params.get(TI_STEER_DELTA_UP_LOW) # torque increase per refresh
       P.TI_STEER_DELTA_DOWN = self.op_params.get(TI_STEER_DELTA_DOWN)           # torque decrease per refresh
-      P.TI_STEER_DELTA_DOWN_LOW = self.op_params.get(TI_STEER_DELTA_DOWN) 
+      P.TI_STEER_DELTA_DOWN_LOW = self.op_params.get(TI_STEER_DELTA_DOWN_LOW) 
       P.TI_HIGH_BP = self.op_params.get(TI_HIGH_BP)
       P.TI_JUMPING_POINT = self.op_params.get(TI_JUMPING_POINT)
       if P.TI_JUMPING_POINT > 0:

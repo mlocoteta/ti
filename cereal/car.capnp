@@ -398,7 +398,7 @@ struct CarParams {
     enableApgs @6 :Bool;       # advanced parking guidance system
   enableBsm @56 :Bool;       # blind spot monitoring
   flags @64 :UInt32;         # flags for car specific quirks
-  enableTorqueInterceptor @63 :Bool;
+  enableTorqueInterceptor @65 :Bool;
 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
