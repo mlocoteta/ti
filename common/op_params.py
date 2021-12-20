@@ -169,15 +169,16 @@ class opParams:
                         ENABLE_RATE_PARAMS: Param(False, [bool], live=True, depends_on=SHOW_RATE_PARAMS),
                         TI_STEER_MAX: Param(600, VT.number, live=True, depends_on=SHOW_RATE_PARAMS),
                         TI_STEER_DELTA_UP: Param(3, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
-                        #TI_STEER_DELTA_UP_LOW: Param(6, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        TI_STEER_DELTA_UP_LOW: Param(6, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         TI_STEER_DELTA_DOWN: Param(3, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
-                        #TI_STEER_DELTA_DOWN_LOW: Param(15, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
+                        TI_STEER_DELTA_DOWN_LOW: Param(15, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         TI_HIGH_BP: Param(150, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         STOCK_DELTA_UP: Param(7, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         STOCK_DELTA_DOWN: Param(14, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         STOCK_STEER_MAX: Param(238, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         TI_JUMPING_POINT: Param(70, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         STEER_RATIO: Param(0, VT.number, live=True),
+			STEER_ACTUATOR_DELAY: Param(0.1, VT.number, live=True)
 }
 
     self._params_file = '/data/op_params.json'
@@ -337,5 +338,5 @@ STOCK_DELTA_UP = 'stock_delta_up'
 STOCK_DELTA_DOWN = 'stock_delta_down'
 STOCK_STEER_MAX = 'stock_steer_max'
 TI_JUMPING_POINT = 'ti_jumping_point'
-
+STEER_ACTUATOR_DELAY = 'steer_actuator_delay'
 STEER_RATIO = 'steer ratio'

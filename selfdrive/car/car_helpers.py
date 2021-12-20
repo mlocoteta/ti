@@ -191,4 +191,4 @@ def get_ti():
   CarInterface = global_ti.saved_CarInterface
 #  car_params = CarInterface.get_params(global_ti.saved_candidate, global_ti.saved_finger)
 
-  return car_params
+#  return car_params

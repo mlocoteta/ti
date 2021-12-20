@@ -27,6 +27,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.hardware import HARDWARE, TICI, EON
 from selfdrive.manager.process_config import managed_processes
+from common.op_params import opParams
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
@@ -59,7 +60,7 @@ IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     config_realtime_process(4 if TICI else 3, Priority.CTRL_HIGH)
-
+    self.opParams = opParams()
     self.accel_pressed = False
     self.decel_pressed = False
     self.accel_pressed_last = 0.
@@ -309,7 +310,7 @@ class Controls:
       print("TI is found")
       self.CP.enableTorqueInterceptor = True
      #Update CP based on torque_interceptor_ready
-      self.CP = get_ti()
+#      self.CP = get_ti()
 
     if not REPLAY:
       # Check for mismatch between openpilot and car's PCM
@@ -559,7 +560,7 @@ class Controls:
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
-                                                                             lat_plan.curvatureRates)
+                                                                             lat_plan.curvatureRates, self.opParams)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(lat_active, CS, self.CP, self.VM, params,
                                                                              desired_curvature, desired_curvature_rate)
     else:
