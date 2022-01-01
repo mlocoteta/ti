@@ -160,11 +160,15 @@ class opParams:
 
     VT = ValueTypes()
     self.fork_params = {
-                        LAT_PID_KP_BP: Param([5., 15., 35.], [list, float, int], live=True),
-                        LAT_PID_KP_V: Param([0.04, 0.29, 0.29], [list, float, int], live=True),
-                        LAT_PID_KI_BP: Param([10., 15., 35], [list, float, int], live=True),
-                        LAT_PID_KI_V: Param([0.016, 0.07, 0.07], [list, float, int], live=True),
-                        LAT_PID_KF: Param(6e-6, VT.number, live=True),
+                        SHOW_INDI_PARAMS: Param(False, [bool], live=True),
+                        INDI_INNER_GAIN_BP: Param([20, 24, 30], [list, float, int], live=True, depends_on=ENABLE_INDI_BREAKPOINTS),
+                        INDI_INNER_GAIN_V: Param([7.25, 7.5, 9], [list, float, int], live=True, depends_on=ENABLE_INDI_BREAKPOINTS),
+                        INDI_OUTER_GAIN_BP: Param([20, 24, 30], [list, float, int], live=True, depends_on=ENABLE_INDI_BREAKPOINTS),
+                        INDI_OUTER_GAIN_V: Param([6, 7.25, 6], [list, float, int], live=True, depends_on=ENABLE_INDI_BREAKPOINTS),
+                        INDI_TIME_CONSTANT_BP: Param([20, 24], [list, float, int], live=True, depends_on=ENABLE_INDI_BREAKPOINTS),
+                        INDI_TIME_CONSTANT_V: Param([1.6, 1.83], [list, float, int], live=True, depends_on=ENABLE_INDI_BREAKPOINTS),
+                        INDI_ACTUATOR_EFFECTIVENESS_BP: Param([0, 24], [list, float, int], live=True, depends_on=ENABLE_INDI_BREAKPOINTS),
+                        INDI_ACTUATOR_EFFECTIVENESS_V: Param([2, 3], [list, float, int], live=True, depends_on=ENABLE_INDI_BREAKPOINTS),
                         SHOW_RATE_PARAMS: Param(False, [bool], live=True),
                         ENABLE_RATE_PARAMS: Param(False, [bool], live=True, depends_on=SHOW_RATE_PARAMS),
                         TI_STEER_MAX: Param(600, VT.number, live=True, depends_on=SHOW_RATE_PARAMS),
@@ -178,7 +182,7 @@ class opParams:
                         STOCK_STEER_MAX: Param(238, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         TI_JUMPING_POINT: Param(70, VT.number, live=True ,depends_on=SHOW_RATE_PARAMS),
                         STEER_RATIO: Param(0, VT.number, live=True),
-			STEER_ACTUATOR_DELAY: Param(0.1, VT.number, live=True)
+		                  	STEER_ACTUATOR_DELAY: Param(0.1, VT.number, live=True)
 }
 
     self._params_file = '/data/op_params.json'
@@ -320,11 +324,16 @@ class opParams:
         print("Unable to write file: " + str(e))
         return False
 
-LAT_PID_KP_BP = 'lat_pid_kp_bp'
-LAT_PID_KP_V = 'lat_pid_kp_v'
-LAT_PID_KI_BP = 'lat_pid_ki_bp'
-LAT_PID_KI_V = 'lat_pid_ki_v'
-LAT_PID_KF = 'lat_pid_kf'
+SHOW_INDI_PARAMS = 'show_indi_params'
+ENABLE_INDI_BREAKPOINTS = 'enable_indi_breakpoints'
+INDI_INNER_GAIN_BP = 'indi_inner_gain_bp'
+INDI_INNER_GAIN_V = 'indi_inner_gain_v'
+INDI_OUTER_GAIN_BP = 'indi_outer_gain_bp'
+INDI_OUTER_GAIN_V = 'indi_outer_gain_v'
+INDI_ACTUATOR_EFFECTIVENESS_BP = 'indi_actuator_effectiveness_bp'
+INDI_ACTUATOR_EFFECTIVENESS_V = 'indi_actuator_effectiveness_v'
+INDI_TIME_CONSTANT_BP = 'indi_time_constant_bp'
+INDI_TIME_CONSTANT_V = 'indi_time_constant_v'
 
 SHOW_RATE_PARAMS = 'show_rate_params'
 ENABLE_RATE_PARAMS = 'enable_rate_params'
