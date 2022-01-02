@@ -251,9 +251,10 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.66 # 13.37 is spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.04,0.2,0.4], [0.0133,.0677, 0.1]]      
-      ret.lateralTuning.pid.kf = 0.000020
+#      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.04,0.2,0.4], [0.0133,.0677, 0.1]]      
+#      ret.lateralTuning.pid.kf = 0.000020
       tire_stiffness_factor = 0.8467
+      ret.lateralTuning.init('indi')
 
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
@@ -366,7 +367,7 @@ class CarInterface(CarInterfaceBase):
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.5
+    ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.8
 
     return ret
