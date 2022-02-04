@@ -213,7 +213,7 @@ class CarController():
     if CS.CP.enableTorqueInterceptor:
       can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint,apply_steer_ti))
       can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-        lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
+        False, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
     else:
       #The ti cannot be detected unless OP sends a can message to it becasue the ti only transmits when it 
       #sees the signature key in the designated address range.

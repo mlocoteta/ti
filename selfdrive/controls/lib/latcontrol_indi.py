@@ -72,7 +72,7 @@ class LatControlINDI():
   @property
   def inner_loop_gain(self):
     postfix = ''
-    self._inner_loop_gain = interp(self.speed, self.op_params.get(INDI_INNER_GAIN_BP + postfix), self.op_params.get(INDI_INNER_GAIN_V + postfix))
+    return interp(self.speed, self.op_params.get(INDI_INNER_GAIN_BP + postfix), self.op_params.get(INDI_INNER_GAIN_V + postfix))
     #return interp(self.speed, self._inner_loop_gain[0], self._inner_loop_gain[1])
 
   def reset(self):
@@ -150,7 +150,7 @@ class LatControlINDI():
 
       # Enforce rate limit
       if self.enforce_rate_limit:
-        steer_max = float(self.params.STEER_MAX)
+        steer_max = float(P.TI_STEER_MAX)
         new_output_steer_cmd = steer_max * (self.steer_filter.x + delta_u)
         prev_output_steer_cmd = steer_max * self.output_steer
         new_output_steer_cmd = apply_ti_steer_torque_limits(new_output_steer_cmd, prev_output_steer_cmd, prev_output_steer_cmd, P)
