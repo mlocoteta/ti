@@ -1,4 +1,4 @@
-from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams
+from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams, SERIAL_STEERING
 from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
@@ -83,7 +83,7 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
-  bus = get_lkas_cmd_bus(car_fingerprint, radar_disabled)
+  bus = 2 if car_fingerprint in SERIAL_STEERING else get_lkas_cmd_bus(car_fingerprint, radar_disabled)
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
@@ -123,8 +123,9 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
         'PCM_GAS': hud.pcm_accel,
         'CRUISE_SPEED': hud.v_cruise,
         'ENABLE_MINI_CAR': 1,
-        'HUD_LEAD': hud.car,
-        'HUD_DISTANCE': 3,    # max distance setting on display
+	      'HUD_LEAD': hud.car,
+        'HUD_DISTANCE_3': 1 if hud.car != 0 else 0,
+        'HUD_DISTANCE': hud.dist_lines,    # max distance setting on display
         'IMPERIAL_UNIT': int(not is_metric),
         'SET_ME_X01_2': 1,
         'SET_ME_X01': 1,
