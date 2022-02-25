@@ -83,3 +83,5 @@ models/*.thneed
 build/
 
 !**/.gitkeep
+.lfsconfig
+tools/plotjuggler/layouts/pid_lkas.xml
