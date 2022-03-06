@@ -7,6 +7,7 @@ from selfdrive.car import create_gas_interceptor_command, apply_std_steer_torque
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams, SERIAL_STEERING, LKAS_LIMITS
 from opendbc.can.packer import CANPacker
+from common.op_params import opParams, ENABLE_RATE_PARAMS, TI_HIGH_BP, TI_STEER_MAX, TI_STEER_DELTA_UP, TI_STEER_DELTA_DOWN, STOCK_DELTA_UP, STOCK_DELTA_DOWN, STOCK_STEER_MAX, TI_JUMPING_POINT
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -97,7 +98,7 @@ HUDData = namedtuple("HUDData",
 
 
 class CarController():
-  def __init__(self, dbc_name, CP, VM):
+  def __init__(self, dbc_name, CP, VM, OP=None):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
@@ -112,12 +113,28 @@ class CarController():
     self.gas = 0
     self.brake = 0
 
+    if not OP:
+      OP = opParams()
+    self.op_params = OP
     self.params = CarControllerParams(CP)
 
   def update(self, enabled, active, CS, frame, actuators, pcm_cancel_cmd,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
+    if (self.op_params.get(ENABLE_RATE_PARAMS)):
+      P.STEER_DELTA_UP = self.op_params.get(STOCK_DELTA_UP)
+      P.STEER_DELTA_DOWN = self.op_params.get(STOCK_DELTA_DOWN)
+      P.STEER_MAX = self.op_params.get(STOCK_STEER_MAX)
+      P.TI_STEER_MAX = self.op_params.get(TI_STEER_MAX)                # theoretical max_steer 2047
+      P.TI_STEER_DELTA_UP = self.op_params.get(TI_STEER_DELTA_UP)             # torque increase per refresh
+      P.TI_STEER_DELTA_UP_LOW = self.op_params.get(TI_STEER_DELTA_UP) # torque increase per refresh
+      P.TI_STEER_DELTA_DOWN = self.op_params.get(TI_STEER_DELTA_DOWN)           # torque decrease per refresh
+      P.TI_STEER_DELTA_DOWN_LOW = self.op_params.get(TI_STEER_DELTA_DOWN) 
+      P.TI_HIGH_BP = self.op_params.get(TI_HIGH_BP)
+      P.TI_JUMPING_POINT = self.op_params.get(TI_JUMPING_POINT)
+      if P.TI_JUMPING_POINT > 0:
+        P.TI_STEER_MAX = (self.op_params.get(TI_STEER_MAX) - P.TI_JUMPING_POINT)
 
     if active:
       accel = actuators.accel

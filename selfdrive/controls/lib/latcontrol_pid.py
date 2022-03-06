@@ -4,16 +4,22 @@ from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
+from common.op_params import opParams, LAT_PID_KP_BP, LAT_PID_KP_V, LAT_PID_KD_BP, LAT_PID_KD_V, LAT_PID_KI_BP, LAT_PID_KI_V, LAT_PID_KF
 
 
 class LatControlPID(LatControl):
-  def __init__(self, CP, CI):
+  def __init__(self, CP, CI, OP=None):
     super().__init__(CP, CI)
-    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
-                            (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                            (CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
-                            k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
-                            derivative_period=0.1)
+    if OP is None:
+      OP = opParams()
+    self.op_params = OP
+
+    kp = (LAT_PID_KP_BP, LAT_PID_KP_V)
+    ki = (LAT_PID_KI_BP, LAT_PID_KI_V)
+    kd = (LAT_PID_KD_BP, LAT_PID_KD_V)
+    kf = LAT_PID_KF
+    self.pid = PIDController(kp, ki, kd, kf, pos_limit=1.0, neg_limit=-1.0,
+                            derivative_period=0.1, isLateral=True)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
   def reset(self):
