@@ -19,10 +19,12 @@ class PIDController():
       OP = opParams()
     self.op_params = OP
     if isLateral:
-      self.pidList = [k_p,k_i,k_f]
+      self.pidList = [k_p,k_i,k_d, k_f]
       self._k_p = (self.op_params.get(k_p[0]), self.op_params.get(k_p[1]))  # proportional gain
       self._k_i = (self.op_params.get(k_i[0]), self.op_params.get(k_i[1]))
+      self._k_d = (self.op_params.get(k_d[0]), self.op_params.get(k_d[1]))
       self.k_f = self.op_params.get(k_f)
+
     else:
       self._k_p = k_p  # proportional gain
       self._k_i = k_i  # integral gain
@@ -47,7 +49,8 @@ class PIDController():
   def _update_params(self):
     self._k_p = (self.op_params.get(self.pidList[0][0]), self.op_params.get(self.pidList[0][1]))
     self._k_i = (self.op_params.get(self.pidList[1][0]), self.op_params.get(self.pidList[1][1]))
-    self.k_f = self.op_params.get(self.pidList[2])
+    self._k_d = (self.op_params.get(self.pidList[2][0]), self.op_params.get(self.pidList[2][1]))
+    self.k_f = self.op_params.get(self.pidList[3])
         
       
   @property
