@@ -109,6 +109,9 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelayLowerBound = 0.15
     ret.longitudinalActuatorDelayUpperBound = 0.15
     ret.steerLimitTimer = 1.0
+
+    # No Torque Interceptor by default
+    ret.enableTorqueInterceptor = False
     return ret
 
   @abstractmethod

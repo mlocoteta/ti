@@ -123,7 +123,7 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
         'PCM_GAS': hud.pcm_accel,
         'CRUISE_SPEED': hud.v_cruise,
         'ENABLE_MINI_CAR': 1,
-	      'HUD_LEAD': hud.car,
+        'HUD_LEAD': hud.car,
         'HUD_DISTANCE_3': 1 if hud.car != 0 else 0,
         'HUD_DISTANCE': hud.dist_lines,    # max distance setting on display
         'IMPERIAL_UNIT': int(not is_metric),
@@ -173,3 +173,16 @@ def spam_buttons_command(packer, button_val, idx, car_fingerprint):
   }
   bus = get_pt_bus(car_fingerprint)
   return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)
+
+def create_ti_steering_control(packer, car_fingerprint, apply_steer):
+
+  key = 3294744160
+  chksum = apply_steer
+
+  values = {
+      "LKAS_REQUEST"     : apply_steer,
+      "CHKSUM"           : chksum,
+      "KEY"              : key
+   }
+
+  return packer.make_can_msg("CAM_LKAS2", 0, values)

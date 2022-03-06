@@ -8,7 +8,7 @@ from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_ti
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 from selfdrive.config import Conversions as CV
-
+from selfdrive import global_ti as TI
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -31,6 +31,9 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
+
+    if ret.enableTorqueInterceptor:
+      print("Recieving torque interceptor signal.")
 
     if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
@@ -242,7 +245,17 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [2.1, 1.7, 1.2]
       ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.longitudinalTuning.kiV = [0.3, 0.18]
+      if ret.enableTorqueInterceptor:
+        ret.lateralTuning.init('indi')
+        ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
+        ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.5]
+        ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
+        ret.lateralTuning.indi.outerLoopGainV = [4, 5.5]
+        ret.lateralTuning.indi.timeConstantBP = [2, 35]
+        ret.lateralTuning.indi.timeConstantV = [1.6, 2.0]
+        ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
+        ret.lateralTuning.indi.actuatorEffectivenessV = [1.0, 2.0]
 
     elif candidate == CAR.ACURA_MDX_HYBRID:
       stop_and_go = False
@@ -362,6 +375,9 @@ class CarInterface(CarInterfaceBase):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
+    if self.CP.enableTorqueInterceptor and not TI.enabled:
+      TI.enabled = True
+      self.cp = self.CS.get_can_parser(self.CP)
     if self.cp_body:
       self.cp_body.update_strings(can_strings)
 
@@ -407,6 +423,8 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret, pcm_enable=False)
+    if not ret.cruiseState.enabled and not self.CS.ti_lkas_allowed:
+      events.add(EventName.steerTempUnavailable)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
     if self.CS.park_brake:
