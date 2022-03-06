@@ -246,16 +246,16 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [2.1, 1.7, 1.2]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.3, 0.18]
-      if ret.enableTorqueInterceptor:
-        ret.lateralTuning.init('indi')
-        ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
-        ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.5]
-        ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
-        ret.lateralTuning.indi.outerLoopGainV = [4, 5.5]
-        ret.lateralTuning.indi.timeConstantBP = [2, 35]
-        ret.lateralTuning.indi.timeConstantV = [1.6, 2.0]
-        ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
-        ret.lateralTuning.indi.actuatorEffectivenessV = [1.0, 2.0]
+      #if ret.enableTorqueInterceptor:
+      #  ret.lateralTuning.init('indi')
+      #  ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
+      #  ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.5]
+      #  ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
+      #  ret.lateralTuning.indi.outerLoopGainV = [4, 5.5]
+      #  ret.lateralTuning.indi.timeConstantBP = [2, 35]
+      #  ret.lateralTuning.indi.timeConstantV = [1.6, 2.0]
+      #  ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
+      #  ret.lateralTuning.indi.actuatorEffectivenessV = [1.0, 2.0]
 
     elif candidate == CAR.ACURA_MDX_HYBRID:
       stop_and_go = False
