@@ -226,8 +226,10 @@ class CarState(CarStateBase):
       ret.doorOpen = any([cp.vl["DOORS_STATUS"]["DOOR_OPEN_FL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_FR"],
                           cp.vl["DOORS_STATUS"]["DOOR_OPEN_RL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_RR"]])
     ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LAMP"] or not cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LATCHED"])
-
-    if self.CP.carFingerprint in SERIAL_STEERING:
+    
+    if self.CP.enableTorqueInterceptor:
+      steer_status = "NORMAL"
+    elif self.CP.carFingerprint in SERIAL_STEERING:
       steer_status = self.steer_status_values[cp_cam.vl["STEER_STATUS"]['STEER_STATUS']]
     else:
       steer_status = self.steer_status_values[cp.vl["STEER_STATUS"]["STEER_STATUS"]]
