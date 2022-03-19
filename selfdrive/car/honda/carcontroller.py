@@ -206,6 +206,7 @@ class CarController():
       can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint, apply_steer_ti))
       #print(apply_steer_ti)
       apply_steer = 0
+      lkas_active = False
       can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
         lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
     else:
