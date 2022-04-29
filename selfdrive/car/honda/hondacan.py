@@ -1,5 +1,5 @@
 from common.conversions import Conversions as CV
-from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
+from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams, SERIAL_STEERING
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -22,6 +22,7 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
+  pump_on = apply_brake > 0
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
   pcm_fault_cmd = False
@@ -86,9 +87,8 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
-  bus = get_lkas_cmd_bus(car_fingerprint, radar_disabled)
+  bus = 2 if car_fingerprint in SERIAL_STEERING else get_lkas_cmd_bus(car_fingerprint, radar_disabled)
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
-
 
 def create_bosch_supplemental_1(packer, car_fingerprint, idx):
   # non-active params
