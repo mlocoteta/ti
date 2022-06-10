@@ -13,7 +13,7 @@ from common.conversions import Conversions as CV
 from panda import ALTERNATIVE_EXPERIENCE
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
+from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can, get_ti
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
@@ -106,7 +106,8 @@ class Controls:
     self.CP.alternativeExperience = 0
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
-
+    
+    self.ti_ready = False
     # read params
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
@@ -288,7 +289,14 @@ class Controls:
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
+        
+      if pandaState.torqueInterceptorDetected and not self.ti_ready:
+        self.ti_ready = True
+        self.CP.enableTorqueInterceptor = True
+        #Update CP based on torque_interceptor_ready
+        self.CP = get_ti()
 
+    # Check for HW or system issues
     # Handle HW and system malfunctions
     # Order is very intentional here. Be careful when modifying this.
     num_events = len(self.events)

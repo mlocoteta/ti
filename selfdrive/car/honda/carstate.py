@@ -6,7 +6,7 @@ from common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, SERIAL_STEERING
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, SERIAL_STEERING, TI_STATE, LKAS_LIMITS
 
 TransmissionType = car.CarParams.TransmissionType
 
@@ -57,6 +57,21 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     checks.append(("STEER_STATUS", 0))
   else:
     checks.append(("STEER_STATUS", 100))
+
+  # get real driver torque if we are using a torque interceptor
+  if CP.enableTorqueInterceptor:
+    signals += [
+      ("TI_TORQUE_SENSOR", "TI_FEEDBACK", 0),
+      ("CHKSUM", "TI_FEEDBACK", 0),
+      ("VERSION_NUMBER", "TI_FEEDBACK", 0),
+      ("STATE", "TI_FEEDBACK", 0),
+      ("VIOL", "TI_FEEDBACK", 0),
+      ("ERROR", "TI_FEEDBACK", 0),
+      ("RAMP_DOWN", "TI_FEEDBACK", 0),
+    ]
+    checks += [
+      ("TI_FEEDBACK", 100),
+    ]
 
   if CP.carFingerprint == CAR.ODYSSEY_CHN or CP.carFingerprint in SERIAL_STEERING:
     checks += [
@@ -158,6 +173,14 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
+    
+    self.ti_ramp_down = False
+    self.ti_version = 1
+    self.ti_state = TI_STATE.RUN
+    self.ti_violation = 0
+    self.ti_error = 0
+    self.ti_lkas_allowed = False
+
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.gearbox_msg = "GEARBOX"
     if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.cvt:
@@ -257,13 +280,29 @@ class CarState(CarStateBase):
       ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
       ret.gasPressed = ret.gas > 1e-5
 
-    if self.CP.carFingerprint in SERIAL_STEERING:
+    if self.CP.enableTorqueInterceptor:
+      ret.steeringTorque = cp.vl["TI_FEEDBACK"]["TI_TORQUE_SENSOR"]
+
+      self.ti_version = cp.vl["TI_FEEDBACK"]["VERSION_NUMBER"]
+      self.ti_state = cp.vl["TI_FEEDBACK"]["STATE"] # DISCOVER = 0, OFF = 1, DRIVER_OVER = 2, RUN=3
+      self.ti_violation = cp.vl["TI_FEEDBACK"]["VIOL"] # 0 = no violation
+      self.ti_error = cp.vl["TI_FEEDBACK"]["ERROR"] # 0 = no error
+      if self.ti_version > 1:
+        self.ti_ramp_down = (cp.vl["TI_FEEDBACK"]["RAMP_DOWN"] == 1)
+
+      ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.TI_STEER_THRESHOLD
+      self.ti_lkas_allowed = not self.ti_ramp_down and self.ti_state == TI_STATE.RUN
+    elif self.CP.carFingerprint in SERIAL_STEERING:
       ret.steeringTorque = cp_cam.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
-      ret.steeringTorqueEps = cp_cam.vl["STEER_MOTOR_TORQUE"]['MOTOR_TORQUE']
+      ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.STEER_THRESHOLD
     else:
       ret.steeringTorque = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
+      ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
+
+    if self.CP.carFingerprint in SERIAL_STEERING:
+      ret.steeringTorqueEps = cp_cam.vl["STEER_MOTOR_TORQUE"]['MOTOR_TORQUE']
+    else:
       ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]['MOTOR_TORQUE']
-    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       if not self.CP.openpilotLongitudinalControl:

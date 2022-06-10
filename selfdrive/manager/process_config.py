@@ -3,7 +3,7 @@ import os
 from cereal import car
 from common.params import Params
 from selfdrive.hardware import TICI, PC
-from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
+from selfdrive.manager.process import PythonProcess, NativeProcess #, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
@@ -18,7 +18,7 @@ def logging(started, params, CP: car.CarParams) -> bool:
   return started and run
 
 procs = [
-  DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
+  #DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
   # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
   NativeProcess("camerad", "selfdrive/camerad", ["./camerad"], unkillable=True, callback=driverview),
   NativeProcess("clocksd", "selfdrive/clocksd", ["./clocksd"]),
