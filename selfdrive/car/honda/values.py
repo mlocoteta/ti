@@ -42,6 +42,16 @@ class CarControllerParams:
     self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
     self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
+
+class TI_STATE:
+  DISCOVER = 0
+  OFF = 1
+  DRIVER_OVER = 2
+  RUN = 3
+
+class HondaFlags(IntFlag):
+  # Bosch models with alternate set of LKAS_HUD messages
+  BOSCH_EXT_HUD = 1
 class LKAS_LIMITS:
   STEER_MAX = 239
   STEER_THRESHOLD = 30
@@ -50,11 +60,19 @@ class LKAS_LIMITS:
   STEER_DRIVER_ALLOWANCE = 25
   STEER_DRIVER_MULTIPLIER = 18
   STEER_DRIVER_FACTOR = 1
-
-class HondaFlags(IntFlag):
-  # Bosch models with alternate set of LKAS_HUD messages
-  BOSCH_EXT_HUD = 1
-
+  TI_STEER_THRESHOLD = 15
+  TI_STEER_MAX = 550                # theoretical max_steer 2047
+  TI_STEER_DELTA_UP = 4             # torque increase per refresh
+  TI_STEER_DELTA_DOWN = 7           # torque decrease per refresh
+  TI_STEER_DELTA_UP_LOW = 4         # torque increase per refresh
+  TI_STEER_DELTA_DOWN_LOW = 7
+  TI_HIGH_BP = 150    
+  TI_STEER_DRIVER_ALLOWANCE = 5     # allowed driver torque before start limiting
+  TI_STEER_DRIVER_MULTIPLIER = 40   # weight driver torque
+  TI_STEER_DRIVER_FACTOR = 1        # from dbc
+  TI_STEER_ERROR_MAX = 350          # max delta between torque cmd and torque motor
+  TI_JUMPING_POINT = 0
+  TI_STEER_MAX_NEW = (TI_STEER_MAX - TI_JUMPING_POINT)
 
 # Car button codes
 class CruiseButtons:

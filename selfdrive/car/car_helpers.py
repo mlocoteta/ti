@@ -11,10 +11,15 @@ from selfdrive.car.vin import get_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car, get_present_ecus
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
+from cereal import log
+from selfdrive import global_ti
 from selfdrive.car import gen_empty_fingerprint
+from cereal import car
 
 EventName = car.CarEvent.EventName
 
+EventName = car.CarEvent.EventName
+DynamicParam = log.PandaState
 
 def get_startup_event(car_recognized, controller_available, fw_seen):
   if is_comma_remote() and is_tested_branch():
@@ -167,6 +172,10 @@ def fingerprint(logcan, sendcan):
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match,
                  fw_count=len(car_fw), ecu_responses=ecu_responses, error=True)
+
+  global_ti.saved_candidate = car_fingerprint
+  global_ti.saved_finger = finger
+
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
@@ -180,6 +189,7 @@ def get_car(logcan, sendcan):
   disable_radar = Params().get_bool("DisableRadar")
 
   CarInterface, CarController, CarState = interfaces[candidate]
+  global_ti.saved_CarInterface = CarInterface
   CP = CarInterface.get_params(candidate, fingerprints, car_fw, disable_radar)
   CP.carVin = vin
   CP.carFw = car_fw
@@ -187,3 +197,10 @@ def get_car(logcan, sendcan):
   CP.fuzzyFingerprint = not exact_match
 
   return CarInterface(CP, CarController, CarState), CP
+
+def get_ti():
+  print("get_ti, entering get_params")
+  CarInterface = global_ti.saved_CarInterface
+  car_params = CarInterface.get_params(global_ti.saved_candidate, global_ti.saved_finger)
+
+  return car_params
