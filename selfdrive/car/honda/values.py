@@ -60,12 +60,12 @@ class LKAS_LIMITS:
   STEER_DRIVER_ALLOWANCE = 25
   STEER_DRIVER_MULTIPLIER = 18
   STEER_DRIVER_FACTOR = 1
-  TI_STEER_THRESHOLD = 15
+  TI_STEER_THRESHOLD = 20
   TI_STEER_MAX = 550                # theoretical max_steer 2047
-  TI_STEER_DELTA_UP = 4             # torque increase per refresh
-  TI_STEER_DELTA_DOWN = 7           # torque decrease per refresh
-  TI_STEER_DELTA_UP_LOW = 4         # torque increase per refresh
-  TI_STEER_DELTA_DOWN_LOW = 7
+  TI_STEER_DELTA_UP = 6             # torque increase per refresh
+  TI_STEER_DELTA_DOWN = 6           # torque decrease per refresh
+  TI_STEER_DELTA_UP_LOW = 6         # torque increase per refresh
+  TI_STEER_DELTA_DOWN_LOW = 6
   TI_HIGH_BP = 150    
   TI_STEER_DRIVER_ALLOWANCE = 5     # allowed driver torque before start limiting
   TI_STEER_DRIVER_MULTIPLIER = 40   # weight driver torque

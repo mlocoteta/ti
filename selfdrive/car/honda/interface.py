@@ -237,24 +237,32 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.66 # 13.37 is spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 239], [0, 239]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]      
+#      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 239], [0, 239]]
+#      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]      
       ret.lateralTuning.pid.kf = 1e-6
       tire_stiffness_factor = 0.8467
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [2.1, 1.7, 1.2]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.3, 0.18]
-      if ret.enableTorqueInterceptor:
-        ret.lateralTuning.init('indi')
-        ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
-        ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.5]
-        ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
-        ret.lateralTuning.indi.outerLoopGainV = [4, 5.5]
-        ret.lateralTuning.indi.timeConstantBP = [2, 35]
-        ret.lateralTuning.indi.timeConstantV = [1.6, 2.0]
-        ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
-        ret.lateralTuning.indi.actuatorEffectivenessV = [1.0, 2.0]
+      if True: #ret.enableTorqueInterceptor:
+        max_torque = 3.0
+        friction = 0.04
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle=True
+        ret.lateralTuning.torque.kp = 2.0 / max_torque
+        ret.lateralTuning.torque.kf = 1.0 / max_torque
+        ret.lateralTuning.torque.ki = 0.5 / max_torque
+        ret.lateralTuning.torque.friction = friction
+       # ret.lateralTuning.init('indi')
+       # ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
+      #  ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.5]
+   #     ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
+   #     ret.lateralTuning.indi.outerLoopGainV = [4, 5.5]
+    #    ret.lateralTuning.indi.timeConstantBP = [2, 35]
+     #   ret.lateralTuning.indi.timeConstantV = [1.6, 2.0]
+      #  ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
+       # ret.lateralTuning.indi.actuatorEffectivenessV = [1.0, 2.0]
 
     elif candidate == CAR.ACURA_MDX_HYBRID:
       stop_and_go = False
@@ -358,8 +366,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.5
     ret.steerLimitTimer = 0.8
-    if candidate in (CAR.ACCORD_NIDEC, CAR.ACCORD_NIDEC_HYBRID, CAR.V6ACCORD_NIDEC, CAR.ACURA_MDX_HYBRID):
-      ret.steerActuatorDelay = 0.3
+#    if candidate in (CAR.ACCORD_NIDEC, CAR.ACCORD_NIDEC_HYBRID, CAR.V6ACCORD_NIDEC, CAR.ACURA_MDX_HYBRID):
+#      ret.steerActuatorDelay = 0.3
     return ret
 
   @staticmethod
@@ -371,7 +379,7 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     if self.CP.enableTorqueInterceptor and not TI.enabled:
       TI.enabled = True
-      self.cp = self.CS.get_can_parser(self.CP)
+    #  self.cp = self.CS.get_can_parser(self.CP)
       
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
@@ -413,8 +421,8 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret, pcm_enable=False)
-    if not ret.cruiseState.enabled and not self.CS.ti_lkas_allowed:
-      events.add(EventName.steerTempUnavailable)
+#    if not ret.cruiseState.enabled and not self.CS.ti_lkas_allowed:
+#      events.add(EventName.steerTempUnavailable)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
 
