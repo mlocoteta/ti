@@ -62,7 +62,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     checks.append(("STEER_STATUS", 100))
 
   # get real driver torque if we are using a torque interceptor
-  if CP.enableTorqueInterceptor:
+  if True: #CP.enableTorqueInterceptor:
     signals += [
       ("TI_TORQUE_SENSOR", "TI_FEEDBACK", 0),
       ("CHKSUM", "TI_FEEDBACK", 0),
@@ -319,7 +319,7 @@ class CarState(CarStateBase):
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
-    ret.cruiseState.available = bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
+    ret.cruiseState.available = True #bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):

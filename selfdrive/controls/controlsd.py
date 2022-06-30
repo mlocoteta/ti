@@ -295,7 +295,7 @@ class Controls:
         self.ti_ready = True
         self.CP.enableTorqueInterceptor = True
         #Update CP based on torque_interceptor_ready
-        self.CP = get_ti()
+#        self.CP = get_ti()
 
     # Check for HW or system issues
     # Handle HW and system malfunctions
