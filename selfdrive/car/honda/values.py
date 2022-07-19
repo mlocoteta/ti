@@ -1247,7 +1247,7 @@ FW_VERSIONS = {
     (Ecu.srs, 0x18DA53F1, None): [
       b'77959-TRX-A011\x00\x00',
     ],
-    (Ecu.combinationMeters, 0x18DA60F1, None): [
+    (Ecu.combinationMeter, 0x18DA60F1, None): [
       b'78109-TYT-A220\x00\x00',
     ],
   },
