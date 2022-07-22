@@ -1,15 +1,15 @@
 [submodule "panda"]
 	path = panda
-	url = ../../mlocoteta/panda.git
+	url = ../../mlocoteta/panda-ti.git
 [submodule "opendbc"]
 	path = opendbc
-	url = ../../mlocoteta/opendbc.git
+	url = ../../mlocoteta/opendbc-ti.git
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git
 [submodule "cereal"]
 	path = cereal
-	url = ../../commaai/cereal.git
+	url = ../../mlocoteta/cereal-ti.git
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = ../../commaai/rednose.git

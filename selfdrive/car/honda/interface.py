@@ -7,7 +7,7 @@ from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, Honda
 from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
-
+from selfdrive import global_ti as TI
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -32,6 +32,9 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
+
+    if ret.enableTorqueInterceptor:
+      print("Recieving torque interceptor signal.")
 
     if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
@@ -237,10 +240,28 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.66 # 13.37 is spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 239], [0, 239]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]      
+      # ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 239], [0, 239]]
+      # ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]      
       ret.lateralTuning.pid.kf = 1e-6
       tire_stiffness_factor = 0.8467
+      if True: #ret.enableTorqueInterceptor: #Again, not sure why this isn't working right
+        max_torque = 3.0
+        friction = 0.04
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle=True
+        ret.lateralTuning.torque.kp = 2.0 / max_torque
+        ret.lateralTuning.torque.kf = 1.0 / max_torque
+        ret.lateralTuning.torque.ki = 0.5 / max_torque
+        ret.lateralTuning.torque.friction = friction
+        # ret.lateralTuning.init('indi')
+        # ret.lateralTuning.indi.innerLoopGainBP = [5.0, 35]
+        # ret.lateralTuning.indi.innerLoopGainV = [4.5, 6.5]
+        # ret.lateralTuning.indi.outerLoopGainBP = [5, 35]
+        # ret.lateralTuning.indi.outerLoopGainV = [4, 5.5]
+        # ret.lateralTuning.indi.timeConstantBP = [2, 35]
+        # ret.lateralTuning.indi.timeConstantV = [1.6, 2.0]
+        # ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 25]
+        # ret.lateralTuning.indi.actuatorEffectivenessV = [1.0, 2.0]
 
     elif candidate == CAR.ACURA_MDX_HYBRID:
       stop_and_go = False
@@ -346,8 +367,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
-    if candidate in (CAR.ACCORD_NIDEC, CAR.ACCORD_NIDEC_HYBRID, CAR.V6ACCORD_NIDEC, CAR.ACURA_MDX_HYBRID):
-      ret.steerActuatorDelay = 0.3
+    # if candidate in (CAR.ACCORD_NIDEC, CAR.ACCORD_NIDEC_HYBRID, CAR.V6ACCORD_NIDEC, CAR.ACURA_MDX_HYBRID):
+    #   ret.steerActuatorDelay = 0.3
     return ret
 
   @staticmethod
@@ -357,6 +378,9 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c):
+    if self.CP.enableTorqueInterceptor and not TI.enabled:
+      TI.enabled = True
+      # self.cp = self.CS.get_can_parser(self.CP)
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
     buttonEvents = []
