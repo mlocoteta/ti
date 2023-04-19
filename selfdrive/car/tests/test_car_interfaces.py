@@ -9,6 +9,8 @@ from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
+from selfdrive.global_ti import TI
+from selfdrive.car.mazda.values import GEN1
 
 class TestCarInterfaces(unittest.TestCase):
 
@@ -26,6 +28,12 @@ class TestCarInterfaces(unittest.TestCase):
     car_fw = []
 
     car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
+    if car_name in GEN1:
+      TI.saved_candidate = car_name
+      TI.saved_CarInterface = CarInterface
+      TI.saved_finger = fingerprint
+      car_params = TI.saved_CarInterface.get_params(TI.saved_candidate, TI.saved_finger, list(), experimental_long=False, docs=False)
+      car_params.enableTorqueInterceptor = True
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
