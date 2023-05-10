@@ -4,9 +4,9 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
-from selfdrive.car import create_gas_interceptor_command
+from selfdrive.car import create_gas_interceptor_command, wiggle, apply_ti_steer_torque_limits
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams, SERIAL_STEERING, LKAS_LIMITS, HYBRID_BRAKE
 from selfdrive.controls.lib.drive_helpers import rate_limit
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -117,6 +117,8 @@ class CarController:
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
     self.stopping_counter = 0
+    self.apply_steer_last = 0
+    self.ti_apply_steer_last = 0
 
     self.accel = 0.0
     self.speed = 0.0
@@ -130,7 +132,9 @@ class CarController:
     conversion = hondacan.get_cruise_speed_conversion(self.CP.carFingerprint, CS.is_metric)
     hud_v_cruise = hud_control.setSpeed / conversion if hud_control.speedVisible else 255
     pcm_cancel_cmd = CC.cruiseControl.cancel
-
+    ti_apply_steer = ti_new_steer = 0
+    self.steer_rate_limited = False
+    
     if CC.longActive:
       accel = actuators.accel
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
@@ -152,12 +156,18 @@ class CarController:
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_control.visualAlert)
 
+
     # **** process the car messages ****
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(interp(-limited_steer * self.params.STEER_MAX,
-                             self.params.STEER_LOOKUP_BP, self.params.STEER_LOOKUP_V))
+    if CS.CP.enableTorqueInterceptor:
+      new_steer = int(round(actuators.steer * LKAS_LIMITS.TI_STEER_MAX_NEW))
+      apply_steer_ti = apply_ti_steer_torque_limits(new_steer, self.apply_steer_last_ti,
+                                                  CS.out.steeringTorque, LKAS_LIMITS)
+      apply_steer_ti = wiggle(apply_steer_ti, self.apply_steer_last_ti)
 
+    apply_steer = int(interp(actuators.steer * self.params.STEER_MAX,
+                             self.params.STEER_LOOKUP_BP, self.params.STEER_LOOKUP_V))
     # Send CAN commands
     can_sends = []
 
@@ -167,9 +177,21 @@ class CarController:
         can_sends.append((0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1))
 
     # Send steering command.
-    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, CC.latActive, self.CP.carFingerprint,
-                                                      CS.CP.openpilotLongitudinalControl))
-
+    #if ti is enabled we don't have to send apply steer to the stock system but a signal should still be sent.
+    if CS.CP.enableTorqueInterceptor:
+      can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint, apply_steer_ti))
+      apply_steer = 0
+      can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
+        CC.latActive, CS.CP.carFingerprint, CS.CP.openpilotLongitudinalControl))
+      #testing to see if CC.latActive actually helps TI remain stable when going straight
+    else:
+      #The ti cannot be detected unless OP sends a can message to it becasue the ti only transmits when it 
+      #sees the signature key in the designated address range.
+      can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
+      CC.latActive, CS.CP.carFingerprint, CS.CP.openpilotLongitudinalControl))
+      apply_steer_ti = 0
+      can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint, apply_steer_ti))
+      
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
     # all of this is only relevant for HONDA NIDEC
@@ -225,7 +247,8 @@ class CarController:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
-
+          if self.CP.carFingerprint in HYBRID_BRAKE:
+            pump_on = apply_brake > 0
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
                                                          pcm_override, pcm_cancel_cmd, fcw_display,
