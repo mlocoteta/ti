@@ -6,7 +6,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import create_gas_interceptor_command, wiggle, apply_ti_steer_torque_limits
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams, SERIAL_STEERING, LKAS_LIMITS, HYBRID_BRAKE
+from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams, LKAS_LIMITS, HYBRID_BRAKE
 from selfdrive.controls.lib.drive_helpers import rate_limit
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -161,13 +161,15 @@ class CarController:
 
     # steer torque is converted back to CAN reference (positive when steering right)
     if CS.CP.enableTorqueInterceptor:
-      new_steer = int(round(actuators.steer * LKAS_LIMITS.TI_STEER_MAX_NEW))
-      apply_steer_ti = apply_ti_steer_torque_limits(new_steer, self.apply_steer_last_ti,
+      ti_new_steer = int(round(actuators.steer * LKAS_LIMITS.TI_STEER_MAX))
+      ti_apply_steer = apply_ti_steer_torque_limits(ti_new_steer, self.ti_apply_steer_last,
                                                   CS.out.steeringTorque, LKAS_LIMITS)
-      apply_steer_ti = wiggle(apply_steer_ti, self.apply_steer_last_ti)
+      ti_apply_steer = wiggle(ti_apply_steer, self.ti_apply_steer_last)
 
     apply_steer = int(interp(actuators.steer * self.params.STEER_MAX,
                              self.params.STEER_LOOKUP_BP, self.params.STEER_LOOKUP_V))
+    
+    self.steer_rate_limited = (ti_new_steer != ti_apply_steer)
     # Send CAN commands
     can_sends = []
 
@@ -179,18 +181,16 @@ class CarController:
     # Send steering command.
     #if ti is enabled we don't have to send apply steer to the stock system but a signal should still be sent.
     if CS.CP.enableTorqueInterceptor:
-      can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint, apply_steer_ti))
+      can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint, ti_apply_steer))
       apply_steer = 0
       can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
         CC.latActive, CS.CP.carFingerprint, CS.CP.openpilotLongitudinalControl))
       #testing to see if CC.latActive actually helps TI remain stable when going straight
     else:
-      #The ti cannot be detected unless OP sends a can message to it becasue the ti only transmits when it 
-      #sees the signature key in the designated address range.
       can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
       CC.latActive, CS.CP.carFingerprint, CS.CP.openpilotLongitudinalControl))
-      apply_steer_ti = 0
-      can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint, apply_steer_ti))
+      ti_apply_steer = 0
+      can_sends.append(hondacan.create_ti_steering_control(self.packer, CS.CP.carFingerprint, ti_apply_steer))
       
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])

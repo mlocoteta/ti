@@ -7,7 +7,7 @@ from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, Honda
 from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
-from selfdrive import global_ti as TI
+from selfdrive.global_ti import TI
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -35,7 +35,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "honda"
 
     if ret.enableTorqueInterceptor:
-      print("Recieving torque interceptor signal.")
+      print("Receiving torque interceptor signal.")
       
     if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]

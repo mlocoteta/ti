@@ -51,6 +51,7 @@ class TI_STATE:
   OFF = 1
   DRIVER_OVER = 2
   RUN = 3
+  
 class LKAS_LIMITS:
   STEER_MAX = 239
   STEER_THRESHOLD = 30
