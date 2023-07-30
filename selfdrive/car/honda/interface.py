@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
+# mypy: ignore-errors
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
 from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_event, scale_tire_stiffness, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.interfaces import CarInterfaceBase, FRICTION_THRESHOLD
 from selfdrive.car.disable_ecu import disable_ecu
-
+from selfdrive.global_ti import TI
+from selfdrive.controls.lib.drive_helpers import get_friction
+from typing import Callable
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -15,8 +18,26 @@ TransmissionType = car.CarParams.TransmissionType
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
+TorqueFromLateralAccelCallbackType = Callable[[float, car.CarParams.LateralTorqueTuning, float, float, float, float, bool], float]
 
 class CarInterface(CarInterfaceBase):
+  
+  @staticmethod
+  def torque_from_lateral_accel_honda(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
+                                           lateral_accel_error: float, lateral_accel_deadzone: float,
+                                           steering_angle: float, vego: float, friction_compensation: bool) -> float:
+    steering_angle = abs(steering_angle)
+    lat_factor = torque_params.latAccelFactor * ((steering_angle * torque_params.latAngleFactor) + 1)
+    
+    friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
+    return float((lateral_accel_value / lat_factor) + friction)
+
+  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType: # mypy: disable-error-code="override, return-value"
+    if self.CP.carFingerprint in (CAR.ACCORD_NIDEC):
+      return self.torque_from_lateral_accel_honda
+    else:
+      return self.torque_from_lateral_accel_linear # mypy: disable-error-code="override, return-value"
+    
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     if CP.carFingerprint in HONDA_BOSCH:
@@ -34,6 +55,9 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "honda"
 
+    if ret.enableTorqueInterceptor:
+      print("Receiving torque interceptor signal.")
+      
     if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       ret.radarUnavailable = True
@@ -226,6 +250,32 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
       ret.mass = 1900. + STD_CARGO_KG
+        
+    elif candidate in (CAR.ACCORD_NIDEC, CAR.ACCORD_NIDEC_HYBRID, CAR.V6ACCORD_NIDEC):
+      ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.75
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 13.66 # 13.37 is spec
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 239], [0, 239]]
+      # ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.,20], [0.,20]]
+      # ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4,0.3], [0,0]]      
+      tire_stiffness_factor = 0.8467
+      ret.lateralTuning.torque.latAngleFactor = .16
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+
+    elif candidate == CAR.ACURA_MDX_HYBRID:
+      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
+      ret.wheelbase = 2.82
+      ret.centerToFront = ret.wheelbase * 0.428
+      ret.steerRatio = 15.66  # as spec
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 238], [0, 238]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.444
+      ret.lateralTuning.pid.kf = 0.000040
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.135], [0.062]]
+
+    elif candidate == CAR.ODYSSEY:
+      ret.mass = 4471. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35  # as spec
@@ -303,6 +353,9 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
 
+    if candidate in (CAR.ACCORD_NIDEC, CAR.ACCORD_NIDEC_HYBRID, CAR.V6ACCORD_NIDEC, CAR.ACURA_MDX_HYBRID):
+      ret.steerActuatorDelay = 0.1 #changed this back from 0.3?
+
     return ret
 
   @staticmethod
@@ -312,6 +365,8 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c):
+    if self.CP.enableTorqueInterceptor and not TI.enabled:
+      TI.enabled = True
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
     buttonEvents = []
