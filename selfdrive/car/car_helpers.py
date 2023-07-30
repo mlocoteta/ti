@@ -16,6 +16,8 @@ from openpilot.selfdrive.car import gen_empty_fingerprint
 
 FRAME_FINGERPRINT = 100  # 1s
 
+from selfdrive.global_ti import TI
+
 EventName = car.CarEvent.EventName
 
 
@@ -191,6 +193,8 @@ def fingerprint(logcan, sendcan, num_pandas):
                  fw_query_time=fw_query_time, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
+  TI.saved_candidate = car_fingerprint
+  TI.saved_finger = finger
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
@@ -205,5 +209,13 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
+  
+  TI.saved_CarInterface = CarInterface
 
   return CarInterface(CP, CarController, CarState), CP
+
+def get_ti():
+  print("get_ti, entering get_params")
+  car_params = TI.saved_CarInterface.get_params(TI.saved_candidate, TI.saved_finger, list(), False, False)
+
+  return car_params

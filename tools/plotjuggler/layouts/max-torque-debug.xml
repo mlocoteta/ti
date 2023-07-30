@@ -1,47 +1,98 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root>
  <tabbed_widget name="Main Window" parent="main_window">
-  <Tab containers="1" tab_name="tab1">
+  <Tab tab_name="tab1" containers="1">
    <Container>
-    <DockSplitter orientation="-" count="4" sizes="0.249724;0.250829;0.249724;0.249724">
+    <DockSplitter orientation="-" sizes="0.199478;0.200782;0.199478;0.200782;0.199478" count="5">
      <DockArea name="...">
-      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
-       <range left="0.000450" top="6.050533" right="2483.624998" bottom="-7.599037"/>
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="0.151348" left="0.000352" right="4.992115" bottom="-0.595362"/>
        <limitY/>
-       <curve color="#1ac938" name="Actual lateral accel (roll compensated)"/>
-       <curve color="#ff7f0e" name="Desired lateral accel (roll compensated)"/>
+       <curve name="Actual lateral accel (roll compensated)" color="#1ac938"/>
+       <curve name="Desired lateral accel (roll compensated)" color="#ff7f0e"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
-       <range left="0.000450" top="5.384416" right="2483.624998" bottom="-7.503945"/>
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="0.100000" left="0.000352" right="4.992115" bottom="-0.100000"/>
        <limitY/>
-       <curve color="#1ac938" name="roll compensated lateral acceleration"/>
+       <curve name="roll compensated lateral acceleration" color="#1ac938"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
-       <range left="0.000450" top="1.050000" right="2483.624998" bottom="-1.050000"/>
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="1.025000" left="0.000352" right="4.992115" bottom="-0.025000"/>
        <limitY/>
-       <curve color="#0097ff" name="/carState/steeringPressed"/>
-       <curve color="#d62728" name="/carControl/actuatorsOutput/steer"/>
+       <curve name="/carState/steeringPressed" color="#0097ff"/>
+       <curve name="/carControl/actuatorsOutput/steer" color="#d62728"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
-       <range left="0.000450" top="80.762969" right="2483.624998" bottom="-2.181837"/>
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="62.450305" left="0.000352" right="4.992115" bottom="61.174208"/>
        <limitY/>
-       <curve color="#f14cc1" name="/carState/vEgo">
-        <transform alias="/carState/vEgo[Scale/Offset]" name="Scale/Offset">
-         <options value_offset="0" time_offset="0" value_scale="2.23694"/>
+       <curve name="/carState/vEgo" color="#f14cc1">
+        <transform name="Scale/Offset" alias="/carState/vEgo[Scale/Offset]">
+         <options time_offset="0" value_scale="2.23694" value_offset="0"/>
         </transform>
        </curve>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="0.100000" left="0.000352" right="4.992115" bottom="-0.100000"/>
+       <limitY/>
+       <curve name="/sendcan/0/CAM_LKAS2/LKAS_REQUEST" color="#9467bd"/>
+       <curve name="/controlsState/lateralControlState/torqueState/saturated" color="#17becf"/>
       </plot>
      </DockArea>
     </DockSplitter>
    </Container>
   </Tab>
-  <currentTabIndex index="0"/>
+  <Tab tab_name="tab3" containers="1">
+   <Container>
+    <DockSplitter orientation="-" sizes="0.199478;0.200782;0.199478;0.200782;0.199478" count="5">
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="0.210647" left="0.000000" right="4.991265" bottom="0.181546"/>
+       <limitY/>
+       <curve name="/liveTorqueParameters/frictionCoefficientFiltered" color="#d62728"/>
+       <curve name="/liveTorqueParameters/frictionCoefficientRaw" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="0.209956" left="0.000000" right="4.991265" bottom="0.209869"/>
+       <limitY/>
+       <curve name="/liveTorqueParameters/frictionCoefficientFiltered" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="1.330378" left="0.000000" right="4.991265" bottom="0.612705"/>
+       <limitY/>
+       <curve name="/liveTorqueParameters/latAccelFactorFiltered" color="#1f77b4"/>
+       <curve name="/liveTorqueParameters/latAccelFactorRaw" color="#1ac938"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="1.313298" left="0.000000" right="4.991265" bottom="1.312975"/>
+       <limitY/>
+       <curve name="/liveTorqueParameters/latAccelFactorFiltered" color="#1f77b4"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range top="1.025000" left="0.000000" right="4.991265" bottom="-0.025000"/>
+       <limitY/>
+       <curve name="/sendcan/0/CAM_LKAS2/LKAS_REQUEST" color="#9467bd"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="1"/>
  </tabbed_widget>
  <use_relative_time_offset enabled="1"/>
  <!-- - - - - - - - - - - - - - - -->
@@ -51,8 +102,28 @@
   <plugin ID="Cereal Subscriber"/>
  </Plugins>
  <!-- - - - - - - - - - - - - - - -->
+ <previouslyLoaded_Datafiles/>
+ <previouslyLoaded_Streamer name="Cereal Subscriber"/>
  <!-- - - - - - - - - - - - - - - -->
  <customMathEquations>
+  <snippet name="Actual lateral accel (roll compensated)">
+   <global></global>
+   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
+   <linked_source>/controlsState/curvature</linked_source>
+   <additional_sources>
+    <v1>/carState/vEgo</v1>
+    <v2>/liveParameters/roll</v2>
+   </additional_sources>
+  </snippet>
+  <snippet name="Desired lateral accel (roll compensated)">
+   <global></global>
+   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
+   <linked_source>/controlsState/desiredCurvature</linked_source>
+   <additional_sources>
+    <v1>/carState/vEgo</v1>
+    <v2>/liveParameters/roll</v2>
+   </additional_sources>
+  </snippet>
   <snippet name="roll compensated lateral acceleration">
    <global></global>
    <function>if (v3 == 0 and v4 == 1) then
@@ -65,24 +136,6 @@ return 0</function>
     <v2>/liveParameters/roll</v2>
     <v3>/carState/steeringPressed</v3>
     <v4>/carControl/latActive</v4>
-   </additional_sources>
-  </snippet>
-  <snippet name="Desired lateral accel (roll compensated)">
-   <global></global>
-   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
-   <linked_source>/controlsState/desiredCurvature</linked_source>
-   <additional_sources>
-    <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
-   </additional_sources>
-  </snippet>
-  <snippet name="Actual lateral accel (roll compensated)">
-   <global></global>
-   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
-   <linked_source>/controlsState/curvature</linked_source>
-   <additional_sources>
-    <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
    </additional_sources>
   </snippet>
  </customMathEquations>

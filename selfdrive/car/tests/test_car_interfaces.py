@@ -40,6 +40,8 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0) for fw in params['car_fw']]
   return params
 
+from selfdrive.global_ti import TI
+from selfdrive.car.mazda.values import GEN1
 
 class TestCarInterfaces(unittest.TestCase):
 
@@ -54,12 +56,25 @@ class TestCarInterfaces(unittest.TestCase):
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
+    if car_name in FINGERPRINTS:
+      fingerprint = FINGERPRINTS[car_name][0]
+    else:
+      fingerprint = {}
+
     CarInterface, CarController, CarState = interfaces[car_name]
+    fingerprints = gen_empty_fingerprint()
+    fingerprints.update({k: fingerprint for k in fingerprints.keys()})
 
-    args = get_fuzzy_car_interface_args(data.draw)
+    car_fw = []
+    experimental_long = data.draw(st.booleans())
 
-    car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
-                                         experimental_long=args['experimental_long'], docs=False)
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=experimental_long, docs=False)
+    if car_name in GEN1:
+      TI.saved_candidate = car_name
+      TI.saved_CarInterface = CarInterface
+      TI.saved_finger = fingerprint
+      car_params = TI.saved_CarInterface.get_params(TI.saved_candidate, TI.saved_finger, list(), experimental_long=False, docs=False)
+      car_params.enableTorqueInterceptor = True
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -89,21 +104,18 @@ class TestCarInterfaces(unittest.TestCase):
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
-    now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, now_nanos)
-      car_interface.apply(CC, now_nanos)
-      now_nanos += DT_CTRL * 1e9  # 10 ms
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, now_nanos)
-      car_interface.apply(CC, now_nanos)
-      now_nanos += DT_CTRL * 1e9  # 10ms
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface

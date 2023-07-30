@@ -175,6 +175,10 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelayLowerBound = 0.15
     ret.longitudinalActuatorDelayUpperBound = 0.15
     ret.steerLimitTimer = 1.0
+
+    # No Torque Interceptor by default
+    ret.enableTorqueInterceptor = False
+
     return ret
 
   @staticmethod
@@ -335,6 +339,7 @@ class CarStateBase(ABC):
     self.right_blinker_prev = False
     self.cluster_speed_hyst_gap = 0.0
     self.cluster_min_speed = 0.0  # min speed before dropping to 0
+    #self.tiAllowed = car.CarState.
 
     Q = [[0.0, 0.0], [0.0, 100.0]]
     R = 0.3

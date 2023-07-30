@@ -1,0 +1,22 @@
+[General]
+chart_column_count=1
+chart_height=200
+chart_range=5
+chart_series_type=0
+drag_direction=0
+fps=10
+geometry=@ByteArray(\x1\xd9\xd0\xcb\0\x3\0\0\0\0\0\x46\0\0\0\x1b\0\0\x6\xaf\0\0\x3\xc2\0\0\0\x46\0\0\0@\0\0\x6\xaf\0\0\x3\xc2\0\0\0\0\x2\0\0\0\x6\xb0\0\0\0\x46\0\0\0@\0\0\x6\xaf\0\0\x3\xc2)
+last_dir=/home/mat/Downloads
+last_route_dir=/home/mat
+log_livestream=true
+log_path=/home/mat/cabana_live_stream/
+max_cached_minutes=30
+message_header_state_v2=@ByteArray(\0\0\0\xff\0\0\0\0\0\0\0\x1\0\0\0\0\0\0\0\x1\x1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x2\xaa\0\0\0\x6\0\x1\0\x1\0\0\0\0\0\0\0\0\0\0\0\0\x64\xff\xff\xff\xff\0\0\0\x81\0\0\0\0\0\0\0\x6\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\xb6\0\0\0\x1\0\0\0\0\0\0\x3\xe8\0\0\0\0\xb6)
+message_header_state_v3=@ByteArray(\0\0\0\xff\0\0\0\0\0\0\0\x1\0\0\0\x1\0\0\0\0\x1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x2\xaa\0\0\0\x6\x1\x1\0\x1\0\0\0\0\0\0\0\0\0\0\0\0\x64\xff\xff\xff\xff\0\0\0\x84\0\0\0\0\0\0\0\x6\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\x64\0\0\0\x1\0\0\0\0\0\0\0\xb6\0\0\0\x1\0\0\0\x2\0\0\x3\xe8\0\0\0\0\xb6)
+multiple_lines_bytes=true
+recent_files=/home/mat/Downloads/acura_mdx_2018_hybrid_generated (1).dbc, /home/mat/Downloads/acura_mdx_2018_hybrid_generated.dbc, /home/mat/Downloads/acura_mdx_2018.dbc, /home/mat/openpilot/opendbc/honda_accord_touring_2016_can.dbc, /home/mat/openpilot/opendbc/honda_accord_touring_2016_can_generated.dbc
+sparkline_range=15
+suppress_defined_signals=false
+theme=0
+video_splitter_state=@ByteArray(\0\0\0\xff\0\0\0\x1\0\0\0\x2\0\0\x2\x7f\0\0\0\xc3\x1\xff\xff\xff\xff\x1\0\0\0\x2\0)
+window_state=@ByteArray(\0\0\0\xff\0\0\0\0\xfd\0\0\0\x2\0\0\0\0\0\0\x1\xb8\0\0\x3Y\xfc\x2\0\0\0\x1\xfb\0\0\0\x1a\0M\0\x65\0s\0s\0\x61\0g\0\x65\0s\0P\0\x61\0n\0\x65\0l\x1\0\0\0\x14\0\0\x3Y\0\0\0\x93\0\xff\xff\xff\0\0\0\x1\0\0\x2\x81\0\0\x3Y\xfc\x2\0\0\0\x1\xfb\0\0\0\x14\0V\0i\0\x64\0\x65\0o\0P\0\x61\0n\0\x65\0l\x1\0\0\0\x14\0\0\x3Y\0\0\x1'\0\xff\xff\xff\0\0\x2)\0\0\x3Y\0\0\0\x4\0\0\0\x4\0\0\0\b\0\0\0\b\xfc\0\0\0\0)
